@@ -160,6 +160,7 @@ if(WITH_LIKWID)
   add_definitions("-DLIKWID_PERFMON")
 endif()
 add_definitions("-DWITH_AIXSERVICE")
+#add_definitions("-DWITH_PHYDLL")
 add_definitions("-DWITH_ML_INTERFACE")
 
 add_definitions("-DWITH_SCOREP")
