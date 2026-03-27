@@ -19,6 +19,8 @@
 #endif
 #include <vector>
 
+#include <chrono>
+
 #if defined(WITH_PHYDLL_DIRECT)
 #include "ML/mlCouplerPhyDLL.h"
 #endif
@@ -32,6 +34,10 @@
 
 #if defined(WITH_REFERENCE_MODEL)
 #include "ml_coupling/maia/ref/ml_coupling_maia_ref.hpp"
+#endif
+
+#if defined(WITH_PHYDLL_DIRECT) || defined(WITH_AIXSERVICE) || defined(WITH_PHYDLL)  || defined(WITH_REFERENCE_MODEL)
+#include "logger.hpp"
 #endif
 
 using namespace std;
@@ -257,6 +263,7 @@ FvStructuredSolver<nDim>::FvStructuredSolver(MInt solverId, StructuredGrid<nDim>
   initStructuredPostprocessing();
 
 #if defined(WITH_PHYDLL_DIRECT) || defined(WITH_AIXSERVICE) || defined(WITH_PHYDLL)  || defined(WITH_REFERENCE_MODEL)
+  std::string debug_msg = std::string("Setting up ML Coupler...");
   RECORD_TIMER_START(m_timers[Timers::MLCoupling]);
   RECORD_TIMER_START(m_timers[Timers::Setup]);
   std::vector<MFloat*> phyFields;
@@ -297,6 +304,7 @@ FvStructuredSolver<nDim>::FvStructuredSolver(MInt solverId, StructuredGrid<nDim>
   DEBUG("Application::() mlInterval " << mlInterval, MAIA_DEBUG_LEVEL1);
 
   #if defined(WITH_PHYDLL_DIRECT)
+  debug_msg = std::string("Setting up ML Coupler PhyDLL Direct...");
   m_mlCoupler = std::make_unique<MlCouplerPhyDLL>(
     phyFields, 
     nCells, 
@@ -317,6 +325,7 @@ FvStructuredSolver<nDim>::FvStructuredSolver(MInt solverId, StructuredGrid<nDim>
   #endif
 
   #if defined(WITH_PHYDLL) || defined(WITH_REFERENCE_MODEL)
+  debug_msg = std::string("Setting up ML Coupler PhyDLL or Reference Model...");
   //ML Interface
   m_mlCoupler->setup(
     phyFields, 
@@ -339,6 +348,7 @@ FvStructuredSolver<nDim>::FvStructuredSolver(MInt solverId, StructuredGrid<nDim>
   );
   #endif
   #if defined(WITH_AIXSERVICE)
+  debug_msg = std::string("Setting up ML Coupler AIX Service...");
     MBool enable_hybrid_inference_default = false;
     MBool enable_hybrid_inference = Context::getBasicProperty<MBool>("enableHybridInference", AT_, &enable_hybrid_inference_default);
 
@@ -390,6 +400,25 @@ FvStructuredSolver<nDim>::FvStructuredSolver(MInt solverId, StructuredGrid<nDim>
     }
   #endif
 
+  std::array<std::string, 9> context_property_names = {
+    "mlInterval",
+    "mlInputLength",
+    "solutionInterval",
+    "mlStepCoefficient",
+    "mlForecastWindow",
+    "mlScalingFactor",
+    "mlInputStepDistance",
+    "mlCubeOverlap",
+    "mlCubeD"
+};
+
+  std::array<int, 9> context_property_values_int = {0,0,0,0,0,0,0,0,0};
+
+  for (std::size_t i = 0; i < context_property_names.size(); ++i) {
+    context_property_values_int[i] = Context::getBasicProperty<MInt>(context_property_names[i], AT_);
+  }
+  log_init(debug_msg, context_property_names, context_property_values_int);
+
   RECORD_TIMER_STOP(m_timers[Timers::Setup]);
   RECORD_TIMER_STOP(m_timers[Timers::MLCoupling]);
 #endif
@@ -417,6 +446,7 @@ FvStructuredSolver<nDim>::FvStructuredSolver(MInt solverId, StructuredGrid<nDim>
 
 template <MInt nDim>
 FvStructuredSolver<nDim>::~FvStructuredSolver() {
+  log_deinit();
   RECORD_TIMER_STOP(m_timers[Timers::Structured]);
   delete m_cells;
 }
@@ -8445,6 +8475,11 @@ MBool FvStructuredSolver<nDim>::solutionStep() {
   MInt myRank;
   std::string output_file_name;
   #endif
+
+  log_message("Logical Time Step: " + std::to_string(logicalTimeStep) + ", Global Time Step: " + std::to_string(globalTimeStep) +
+              ", Restart Time Step: " + std::to_string(m_restartTimeStep) + ", Coupling=" + std::to_string(isCouplingStep) + ", Inference=" + std::to_string(isInferenceStep));
+
+  log_step(logicalTimeStep, globalTimeStep, m_restartTimeStep, isCouplingStep, isInferenceStep);
 
   //only apply the fields predicted by the ml and received by PhyDLL every N timesteps
   if(m_RKStep == 0 && (isInferenceStep || isCouplingStep)){
