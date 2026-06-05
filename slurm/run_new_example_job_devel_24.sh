@@ -5,7 +5,7 @@ rm forces.0.dat
 rm Residual
 
 echo "Submitting main job..."
-JOB_OUTPUT=$(sbatch slurm/new_example_job_devel_48.sh M "1.00")
+JOB_OUTPUT=$(sbatch slurm/new_example_job_devel_24.sh M "1.00")
 JOB_ID=$(echo $JOB_OUTPUT | awk '{print $NF}')
 
 if [ -z "$JOB_ID" ]; then
