@@ -9,6 +9,10 @@ out/
 scorep-*
 
 
+# Core dumps and scratch files
+core.*
+input/*copy*.toml
+
 # Debugging, temp files and analysis outputs
 Residual
 auxdata/
