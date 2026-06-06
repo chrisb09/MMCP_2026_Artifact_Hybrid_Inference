@@ -89,6 +89,11 @@ source "${project_folder}/setup_env_claix23.sh"
 
 source "${project_folder}/CPP-ML-Interface/extern/python/venv/bin/activate"
 
+# Enable field snapshots if MAIA_SNAPSHOT_DIR is set (inherited from caller or set here)
+if [[ -n "$MAIA_SNAPSHOT_DIR" ]]; then
+    export MAIA_SNAPSHOT_DIR
+    echo "Field snapshots enabled. Target: ${MAIA_SNAPSHOT_DIR}"
+fi
 
 if [[ "$fraction" == "1.00" || "$fraction" == "1" ]]; then
     echo "Running non-hybrid version because hostFraction is 1.00"
@@ -101,4 +106,19 @@ else
     # srun /home/thes1961/HybridInferenceCode/MAIA/build_interface_aix_scorep_23b_hybrid_batch/bin/maia ./"$(basename $TOML_FILE)"
     #srun --label /hpcwork/rwth1859/MMCP_2026_benchmarks/HybridInferenceMAIA/common/bin/maia-hybrid ./"$(basename $TOML_FILE)"
     #mpirun -np 15 /home/thes1961/HybridInferenceCode/MAIA/build_interface_aix_scorep_23b_hybrid_batch/bin/maia ./"$(basename $TOML_FILE)"
+fi
+
+# Post-run: copy snapshot file from /tmp to persistent storage
+if [[ -n "$MAIA_SNAPSHOT_DIR" ]]; then
+    SNAPSHOT_TMP="/tmp/maia_snapshots_${SLURM_JOB_ID}.h5"
+    SNAPSHOT_DEST="${MAIA_SNAPSHOT_DIR}/snapshots_${SLURM_JOB_ID}.h5"
+    if [[ -f "$SNAPSHOT_TMP" ]]; then
+        echo "Copying snapshot file: ${SNAPSHOT_TMP} -> ${SNAPSHOT_DEST}"
+        mkdir -p "${MAIA_SNAPSHOT_DIR}"
+        cp "$SNAPSHOT_TMP" "$SNAPSHOT_DEST"
+        echo "Snapshot copy complete. Size: $(du -h "$SNAPSHOT_DEST" | cut -f1)"
+        rm -f "$SNAPSHOT_TMP"
+    else
+        echo "Warning: Snapshot file not found at ${SNAPSHOT_TMP}"
+    fi
 fi

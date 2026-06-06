@@ -38,6 +38,7 @@
 
 #if defined(WITH_PHYDLL_DIRECT) || defined(WITH_AIXSERVICE) || defined(WITH_PHYDLL)  || defined(WITH_REFERENCE_MODEL)
 #include "logger.hpp"
+#include "snapshot_writer.hpp"
 #endif
 
 using namespace std;
@@ -418,6 +419,7 @@ FvStructuredSolver<nDim>::FvStructuredSolver(MInt solverId, StructuredGrid<nDim>
     context_property_values_int[i] = Context::getBasicProperty<MInt>(context_property_names[i], AT_);
   }
   log_init(debug_msg, context_property_names, context_property_values_int);
+  snapshot::init();
 
   RECORD_TIMER_STOP(m_timers[Timers::Setup]);
   RECORD_TIMER_STOP(m_timers[Timers::MLCoupling]);
@@ -446,6 +448,7 @@ FvStructuredSolver<nDim>::FvStructuredSolver(MInt solverId, StructuredGrid<nDim>
 
 template <MInt nDim>
 FvStructuredSolver<nDim>::~FvStructuredSolver() {
+  snapshot::finalize();
   log_deinit();
   RECORD_TIMER_STOP(m_timers[Timers::Structured]);
   delete m_cells;
@@ -8469,12 +8472,7 @@ MBool FvStructuredSolver<nDim>::solutionStep() {
   MBool isCouplingStep = m_mlCoupler->isCouplingStep(logicalTimeStep);
   MBool isInferenceStep = m_mlCoupler->isInferenceStep(logicalTimeStep);
 
-  #ifdef OUTPUT_FIELDS    
-  std::vector<MInt> nCells;
-  std::vector<MInt> nOffsetCells;
-  MInt myRank;
-  std::string output_file_name;
-  #endif
+  // (OUTPUT_FIELDS variables removed — replaced by runtime snapshot_writer)
 
   log_message("Logical Time Step: " + std::to_string(logicalTimeStep) + ", Global Time Step: " + std::to_string(globalTimeStep) +
               ", Restart Time Step: " + std::to_string(m_restartTimeStep) + ", Coupling=" + std::to_string(isCouplingStep) + ", Inference=" + std::to_string(isInferenceStep));
@@ -8496,19 +8494,12 @@ MBool FvStructuredSolver<nDim>::solutionStep() {
         m_mlCoupler->inference(isInferenceStep);
     #endif
     #if defined(WITH_PHYDLL) || defined(WITH_AIXSERVICE) || defined(WITH_REFERENCE_MODEL)
-      #ifdef OUTPUT_FIELDS    
-        nCells.push_back(m_nCells[0]);
-        nCells.push_back(m_nCells[1]);
-        nCells.push_back(m_nCells[2]);
-
-        nOffsetCells.push_back(m_nOffsetCells[0]);
-        nOffsetCells.push_back(m_nOffsetCells[1]);
-        nOffsetCells.push_back(m_nOffsetCells[2]);
-        
-        myRank = globalDomainId();
-        output_file_name = "sent_fields" + std::to_string(myRank) + "-t" + std::to_string(globalTimeStep) + ".h5";
-        m_mlCoupler->writeUVWFieldsToH5(m_cells->pvariables[PV->U], m_cells->pvariables[PV->V], m_cells->pvariables[PV->W], nCells, nOffsetCells, output_file_name);
-      #endif
+      // Snapshot: capture "sent" fields (before ML inference)
+      snapshot::write_step(
+        m_cells->pvariables[PV->U], m_cells->pvariables[PV->V], m_cells->pvariables[PV->W],
+        m_nCells[0], m_nCells[1], m_nCells[2],
+        m_nOffsetCells[0], m_nOffsetCells[1], m_nOffsetCells[2],
+        globalTimeStep, "sent");
 
       //Checks steptype via internal iteration counter
       m_mlCoupler->ml_step();
@@ -8525,22 +8516,12 @@ MBool FvStructuredSolver<nDim>::solutionStep() {
       RECORD_TIMER_START(m_timers[Timers::Inference]);
       std::cout << "m-AIA: globalTimeStep = " << globalTimeStep << " (logical " << logicalTimeStep << ") is an inference step!" << "\n";
       
-      #ifdef OUTPUT_FIELDS  
-        nCells.clear();        
-        nCells.push_back(m_nCells[0]);
-        nCells.push_back(m_nCells[1]);
-        nCells.push_back(m_nCells[2]);
-
-        nOffsetCells.clear();       
-        nOffsetCells.push_back(m_nOffsetCells[0]);
-        nOffsetCells.push_back(m_nOffsetCells[1]);
-        nOffsetCells.push_back(m_nOffsetCells[2]);
-        
-        myRank = globalDomainId();
-        output_file_name = "received_fields_" + std::to_string(myRank) + "-t" + std::to_string(globalTimeStep) + ".h5";
-        
-        m_mlCoupler->writeUVWFieldsToH5(m_cells->pvariables[PV->U], m_cells->pvariables[PV->V], m_cells->pvariables[PV->W], nCells, nOffsetCells, output_file_name);
-      #endif
+      // Snapshot: capture "received" fields (after ML inference)
+      snapshot::write_step(
+        m_cells->pvariables[PV->U], m_cells->pvariables[PV->V], m_cells->pvariables[PV->W],
+        m_nCells[0], m_nCells[1], m_nCells[2],
+        m_nOffsetCells[0], m_nOffsetCells[1], m_nOffsetCells[2],
+        globalTimeStep, "received");
 
       MInt inferenceIncrement = m_mlCoupler->getInferenceIncrement();
       // taken from rungeKuttaStep() form 3D structured solver
