@@ -1,0 +1,32 @@
+[general]
+coupling_type = "STATIC"
+
+[logging]
+level = "info"
+
+[provider]
+class = "Aixelerator"
+# model_path, app_comm, etc. injected via ConfigOverrides at runtime
+
+[behavior]
+class = "FlowExtrapolatorBehavior"
+# All numeric values are overridden by Context properties at runtime.
+# The entries below serve as defaults / documentation.
+inference_interval = 5
+coupled_steps_before_inference = 5
+step_increment_after_inference = 12
+hdf_output_interval = 50
+total_timesteps = 300
+scaling_factor = 1.0
+forecast_window = 2
+input_step_distance = 1
+inference_start_step = 5
+global_step_offset = 0
+
+[application]
+class = "MLCouplingApplicationFlowExtrapolator"
+cube_dimension = 8
+cube_overlap = 0
+input_sequence_length = 5
+forecast_window = 2
+n_ghost_layers = 0

@@ -16,20 +16,7 @@
 #include "IO/infoout.h"
 #include "MEMORY/genericobject.h"
 
-#if defined(WITH_PHYDLL)
-    #include "ml_coupling/maia/phydll/ml_coupling_maia_phydll.hpp"
-    std::unique_ptr<MLCouplingMaiaPhyDLL> m_mlCoupler;
-#endif
 
-#if defined(WITH_AIXSERVICE)
-    #include "ml_coupling/maia/aix/ml_coupling_maia_aix.hpp"
-    std::unique_ptr<MLCouplingMaiaAix> m_mlCoupler;
-#endif
-
-#if defined(WITH_REFERENCE_MODEL)
-    #include "ml_coupling/maia/ref/ml_coupling_maia_ref.hpp"
-    std::unique_ptr<MLCouplingMaiaRef> m_mlCoupler;
-#endif
 
 #ifdef WITH_PHYDLL_DIRECT
 #include "ML/mlCouplerPhyDLL.h"

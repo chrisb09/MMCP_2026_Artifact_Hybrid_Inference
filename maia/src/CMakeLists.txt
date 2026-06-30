@@ -159,9 +159,12 @@ if(WITH_LIKWID)
   add_definitions("-DWITH_LIKWID")
   add_definitions("-DLIKWID_PERFMON")
 endif()
-add_definitions("-DWITH_AIXSERVICE")
-#add_definitions("-DWITH_PHYDLL")
-add_definitions("-DWITH_ML_INTERFACE")
+add_definitions("-DUSE_CPP_ML_INTERFACE")
+add_subdirectory("${CMAKE_SOURCE_DIR}/CPP-ML-Interface" "${CMAKE_BINARY_DIR}/CPP-ML-Interface")
+include_directories("${CMAKE_SOURCE_DIR}/CPP-ML-Interface/include")
+include_directories("${CMAKE_SOURCE_DIR}/CPP-ML-Interface-old/include") # snapshot_writer.hpp (kept until Phase 8)
+include_directories("${CMAKE_BINARY_DIR}/CPP-ML-Interface") # generated_registry.hpp
+list(APPEND LIBRARIES cpp_ml_interface_library tomlplusplus::tomlplusplus)
 
 add_definitions("-DWITH_SCOREP")
 

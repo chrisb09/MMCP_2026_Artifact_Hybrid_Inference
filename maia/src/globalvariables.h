@@ -19,23 +19,7 @@
 #include "INCLUDE/maiatypes.h"
 #include "UTIL/dlbtimer.h"
 
-#if defined(WITH_PHYDLL)
-    #include <memory>
-    #include "ml_coupling/maia/phydll/ml_coupling_maia_phydll.hpp"
-    extern std::unique_ptr<MLCouplingMaiaPhyDLL> m_mlCoupler;
-#endif
 
-#if defined(WITH_AIXSERVICE)
-    #include <memory>
-    #include "ml_coupling/maia/aix/ml_coupling_maia_aix.hpp"
-    extern std::unique_ptr<MLCouplingMaiaAix> m_mlCoupler;
-#endif
-
-#if defined(WITH_REFERENCE_MODEL)
-    #include <memory>
-    #include "ml_coupling/maia/ref/ml_coupling_maia_ref.hpp"
-    extern std::unique_ptr<MLCouplingMaiaRef> m_mlCoupler;
-#endif
 
 ////////////////////////////////////////////////////////////////////////////////
 class InfoOutFile;

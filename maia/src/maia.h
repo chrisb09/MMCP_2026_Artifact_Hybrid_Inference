@@ -36,21 +36,7 @@
 
 #include <streambuf>
 
-#if defined(WITH_PHYDLL)
-#include "ml_coupling/maia/phydll/ml_coupling_maia_phydll.hpp"
-#endif
 
-#if defined(WITH_AIXSERVICE)
-#include "ml_coupling/maia/aix/ml_coupling_maia_aix.hpp"
-#endif
-
-#if defined(WITH_REFERENCE_MODEL)
-#include "ml_coupling/maia/ref/ml_coupling_maia_ref.hpp"
-#endif
-
-#ifdef WITH_PHYDLL_DIRECT
-#include "ML/mlCouplerPhyDLL.h"
-#endif
 
 /// \brief Auxiliary class to allow creating versions of cout/cerr that only
 ///        output under certain conditions.

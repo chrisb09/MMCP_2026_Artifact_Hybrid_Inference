@@ -21,25 +21,8 @@
 
 #include <chrono>
 
-#if defined(WITH_PHYDLL_DIRECT)
-#include "ML/mlCouplerPhyDLL.h"
-#endif
-#if defined(WITH_PHYDLL)
-#include "ml_coupling/maia/phydll/ml_coupling_maia_phydll.hpp"
-#endif
-
-#if defined(WITH_AIXSERVICE)
-#include "ml_coupling/maia/aix/ml_coupling_maia_aix.hpp"
-#endif
-
-#if defined(WITH_REFERENCE_MODEL)
-#include "ml_coupling/maia/ref/ml_coupling_maia_ref.hpp"
-#endif
-
-#if defined(WITH_PHYDLL_DIRECT) || defined(WITH_AIXSERVICE) || defined(WITH_PHYDLL)  || defined(WITH_REFERENCE_MODEL)
 #include "logger.hpp"
 #include "snapshot_writer.hpp"
-#endif
 
 using namespace std;
 
@@ -263,167 +246,86 @@ FvStructuredSolver<nDim>::FvStructuredSolver(MInt solverId, StructuredGrid<nDim>
   // initialize the postprocessing class
   initStructuredPostprocessing();
 
-#if defined(WITH_PHYDLL_DIRECT) || defined(WITH_AIXSERVICE) || defined(WITH_PHYDLL)  || defined(WITH_REFERENCE_MODEL)
-  std::string debug_msg = std::string("Setting up ML Coupler...");
+  // --- ML Coupling setup (new CPP-ML-Interface) ---
   RECORD_TIMER_START(m_timers[Timers::MLCoupling]);
   RECORD_TIMER_START(m_timers[Timers::Setup]);
-  std::vector<MFloat*> phyFields;
-  std::vector<MInt> nCells;
-  std::vector<MInt> nOffsetCells;
-
-  phyFields.push_back(m_cells->pvariables[PV->U]);
-  phyFields.push_back(m_cells->pvariables[PV->V]);
-  phyFields.push_back(m_cells->pvariables[PV->W]);
-  
-  nCells.push_back(m_nCells[0]);
-  nCells.push_back(m_nCells[1]);
-  nCells.push_back(m_nCells[2]);
-
-  nOffsetCells.push_back(m_nOffsetCells[0]);
-  nOffsetCells.push_back(m_nOffsetCells[1]);
-  nOffsetCells.push_back(m_nOffsetCells[2]);
 
   MInt defaultMLInterval = 100;
-  MInt mlInterval = Context::getBasicProperty<MInt>("mlInterval", AT_, &defaultMLInterval); //100 starting point
-  MInt mlStart = mlInterval; // timestep number at which first ml inference should happen. Needs to be at least (mlInputSeqLen - 1)
+  MInt mlInterval = Context::getBasicProperty<MInt>("mlInterval", AT_, &defaultMLInterval);
+  MInt mlStart = mlInterval;
   MInt defaultMLInputSeqLen = 5;
-  MInt mlInputSeqLen = Context::getBasicProperty<MInt>("mlInputLength", AT_, &defaultMLInputSeqLen); //5
-  MInt hdfOutputInterval = Context::getBasicProperty<MInt>("solutionInterval", AT_); //1000 usually
+  MInt mlInputSeqLen = Context::getBasicProperty<MInt>("mlInputLength", AT_, &defaultMLInputSeqLen);
+  MInt hdfOutputInterval = Context::getBasicProperty<MInt>("solutionInterval", AT_);
   MInt defaultMLStepCoeff = 24;
-  MInt mlStepCoeff = Context::getBasicProperty<MInt>("mlStepCoefficient", AT_, &defaultMLStepCoeff); // 1 step of the ml model is equivalent to 24 steps of the structural solver in its training
+  MInt mlStepCoeff = Context::getBasicProperty<MInt>("mlStepCoefficient", AT_, &defaultMLStepCoeff);
   MInt defaultMLForecastWindow = 2;
-  MInt mlForecastWindow = Context::getBasicProperty<MInt>("mlForecastWindow", AT_, &defaultMLForecastWindow); // How many steps into future to predict
+  MInt mlForecastWindow = Context::getBasicProperty<MInt>("mlForecastWindow", AT_, &defaultMLForecastWindow);
   MFloat defaultMLScalingFactor = 1.0;
-  MFloat mlScalingFactor = Context::getBasicProperty<MFloat>("mlScalingFactor", AT_, &defaultMLScalingFactor); //Manually calculate how the timedistance should be rescaled. Mainly dependent on grid resolution
+  MFloat mlScalingFactor = Context::getBasicProperty<MFloat>("mlScalingFactor", AT_, &defaultMLScalingFactor);
   MInt defaultMLInputStepDistance = 24;
-  MInt mlInputStepDistance = Context::getBasicProperty<MInt>("mlInputStepDistance", AT_, &defaultMLInputStepDistance); //How many steps should be between two sends to ML
-  
+  MInt mlInputStepDistance = Context::getBasicProperty<MInt>("mlInputStepDistance", AT_, &defaultMLInputStepDistance);
   MInt defaultMLCubeOverlap = 0;
-  MInt mlCubeOverlap = Context::getBasicProperty<MInt>("mlCubeOverlap", AT_, &defaultMLCubeOverlap); //How much overlap between cubes
+  MInt mlCubeOverlap = Context::getBasicProperty<MInt>("mlCubeOverlap", AT_, &defaultMLCubeOverlap);
   MInt defaultMLCubeD = 8;
-  MInt mlCubeD = Context::getBasicProperty<MInt>("mlCubeD", AT_, &defaultMLCubeD); //Cube size per dimension
-  DEBUG("Application::() mlInterval " << mlInterval, MAIA_DEBUG_LEVEL1);
+  MInt mlCubeD = Context::getBasicProperty<MInt>("mlCubeD", AT_, &defaultMLCubeD);
 
-  #if defined(WITH_PHYDLL_DIRECT)
-  debug_msg = std::string("Setting up ML Coupler PhyDLL Direct...");
-  m_mlCoupler = std::make_unique<MlCouplerPhyDLL>(
-    phyFields, 
-    nCells, 
-    nOffsetCells, 
-    mlStart, 
-    mlInputSeqLen, 
-    mlInterval, 
-    mlStepCoeff, 
-    hdfOutputInterval,
-    Context::getBasicProperty<MInt>("timeSteps", AT_),
-    mlForecastWindow,
-    mlInputStepDistance,
-    mlScalingFactor,
-    mlCubeOverlap,
-    mlCubeD,
-    m_noGhostLayers
-  );
-  #endif
-
-  #if defined(WITH_PHYDLL) || defined(WITH_REFERENCE_MODEL)
-  debug_msg = std::string("Setting up ML Coupler PhyDLL or Reference Model...");
-  //ML Interface
-  m_mlCoupler->setup(
-    phyFields, 
-    phyFields, 
-    Context::getBasicProperty<MString>("modelPath", AT_),
-    nCells, 
-    nOffsetCells,
-    m_noGhostLayers,
-    mlStart, 
-    mlInputSeqLen, 
-    mlInterval, 
-    mlStepCoeff, 
-    hdfOutputInterval,
-    Context::getBasicProperty<MInt>("timeSteps", AT_),
-    mlForecastWindow,
-    mlInputStepDistance,
-    mlScalingFactor,
-    mlCubeOverlap,
-    mlCubeD
-  );
-  #endif
-  #if defined(WITH_AIXSERVICE)
-  debug_msg = std::string("Setting up ML Coupler AIX Service...");
-    MBool enable_hybrid_inference_default = false;
-    MBool enable_hybrid_inference = Context::getBasicProperty<MBool>("enableHybridInference", AT_, &enable_hybrid_inference_default);
-
-    MString host_fraction_default = "0.0";
-    MString host_fraction = Context::getBasicProperty<MString>("hostFraction", AT_, &host_fraction_default);
-    if ((host_fraction != host_fraction_default) && enable_hybrid_inference){
-      m_mlCoupler->setup(
-        phyFields, 
-        phyFields, 
-        Context::getBasicProperty<MString>("modelPath", AT_),
-        nCells, 
-        nOffsetCells,
-        m_noGhostLayers,
-        mlStart, 
-        mlInputSeqLen, 
-        mlInterval, 
-        mlStepCoeff, 
-        hdfOutputInterval,
-        Context::getBasicProperty<MInt>("timeSteps", AT_),
-        mlForecastWindow,
-        mlInputStepDistance,
-        mlScalingFactor,
-        mlCubeOverlap,
-        mlCubeD,
-        enable_hybrid_inference,
-        std::stod(host_fraction)
-      );
-    }else{
-      m_mlCoupler->setup(
-        phyFields, 
-        phyFields, 
-        Context::getBasicProperty<MString>("modelPath", AT_),
-        nCells, 
-        nOffsetCells,
-        m_noGhostLayers,
-        mlStart, 
-        mlInputSeqLen, 
-        mlInterval, 
-        mlStepCoeff, 
-        hdfOutputInterval,
-        Context::getBasicProperty<MInt>("timeSteps", AT_),
-        mlForecastWindow,
-        mlInputStepDistance,
-        mlScalingFactor,
-        mlCubeOverlap,
-        mlCubeD,
-        enable_hybrid_inference
-      );
-    }
-  #endif
-
-  std::array<std::string, 9> context_property_names = {
-    "mlInterval",
-    "mlInputLength",
-    "solutionInterval",
-    "mlStepCoefficient",
-    "mlForecastWindow",
-    "mlScalingFactor",
-    "mlInputStepDistance",
-    "mlCubeOverlap",
-    "mlCubeD"
-};
-
-  std::array<int, 9> context_property_values_int = {0,0,0,0,0,0,0,0,0};
-
-  for (std::size_t i = 0; i < context_property_names.size(); ++i) {
-    context_property_values_int[i] = Context::getBasicProperty<MInt>(context_property_names[i], AT_);
+  // Allocate float buffers for U/V/W double->float copy
+  MSize totalCells = static_cast<MSize>(m_nCells[0]) * static_cast<MSize>(m_nCells[1]) * static_cast<MSize>(m_nCells[2]);
+  for (int f = 0; f < 3; ++f) {
+    m_mlInputBuf[f].resize(totalCells);
+    m_mlOutputBuf[f].resize(totalCells);
   }
-  log_init(debug_msg, context_property_names, context_property_values_int);
+
+  // Build MLCouplingData<float> wrappers around owned float buffers
+  std::vector<MLCouplingTensor<float>> input_tensors;
+  std::vector<MLCouplingTensor<float>> output_tensors;
+  std::vector<std::vector<int>> dims_vec(3, {m_nCells[0], m_nCells[1], m_nCells[2]});
+  for (int f = 0; f < 3; ++f) {
+    input_tensors.push_back(MLCouplingTensor<float>::wrap_flat(
+        m_mlInputBuf[f].data(), dims_vec[f]));
+    output_tensors.push_back(MLCouplingTensor<float>::wrap_flat(
+        m_mlOutputBuf[f].data(), dims_vec[f]));
+  }
+  MLCouplingData<float> input_data(std::move(input_tensors));
+  MLCouplingData<float> output_data(std::move(output_tensors));
+
+  // Build ConfigOverrides from Context properties (override config.toml defaults)
+  ConfigOverrides overrides;
+  MPI_Comm ml_comm = globalMaiaCommWorld();
+  overrides.dotted["provider.app_comm"] = static_cast<void*>(&ml_comm);
+  overrides.dotted["provider.model_path"] = Context::getBasicProperty<MString>("modelPath", AT_);
+  overrides.dotted["behavior.global_step_offset"] = static_cast<int64_t>(m_restartTimeStep);
+  overrides.dotted["behavior.inference_interval"] = static_cast<int64_t>(mlInterval);
+  overrides.dotted["behavior.coupled_steps_before_inference"] = static_cast<int64_t>(mlInputSeqLen);
+  overrides.dotted["behavior.step_increment_after_inference"] = static_cast<int64_t>(mlStepCoeff);
+  overrides.dotted["behavior.hdf_output_interval"] = static_cast<int64_t>(hdfOutputInterval);
+  MInt totalTimesteps = Context::getBasicProperty<MInt>("timeSteps", AT_);
+  overrides.dotted["behavior.total_timesteps"] = static_cast<int64_t>(totalTimesteps);
+  overrides.dotted["behavior.scaling_factor"] = static_cast<double>(mlScalingFactor);
+  overrides.dotted["behavior.forecast_window"] = static_cast<int64_t>(mlForecastWindow);
+  overrides.dotted["behavior.input_step_distance"] = static_cast<int64_t>(mlInputStepDistance);
+  overrides.dotted["behavior.inference_start_step"] = static_cast<int64_t>(mlStart);
+  overrides.dotted["application.cube_dimension"] = static_cast<int64_t>(mlCubeD);
+  overrides.dotted["application.cube_overlap"] = static_cast<int64_t>(mlCubeOverlap);
+  overrides.dotted["application.input_sequence_length"] = static_cast<int64_t>(mlInputSeqLen);
+  overrides.dotted["application.forecast_window"] = static_cast<int64_t>(mlForecastWindow);
+  overrides.dotted["application.n_ghost_layers"] = static_cast<int64_t>(m_noGhostLayers);
+
+  // Create the MLCoupling instance via config file
+  m_mlCoupler.reset(MLCoupling<float,float>::create_from_config(
+      "./config.toml", std::move(input_data), std::move(output_data), overrides));
+
+  log_init("Setting up ML Coupler (new CMI)",
+           {"mlInterval", "mlInputLength", "solutionInterval",
+            "mlStepCoefficient", "mlForecastWindow", "mlScalingFactor",
+            "mlInputStepDistance", "mlCubeOverlap", "mlCubeD"},
+           {mlInterval, mlInputSeqLen, hdfOutputInterval,
+            mlStepCoeff, mlForecastWindow, static_cast<MInt>(mlScalingFactor),
+            mlInputStepDistance, mlCubeOverlap, mlCubeD});
   snapshot::init();
 
   RECORD_TIMER_STOP(m_timers[Timers::Setup]);
   RECORD_TIMER_STOP(m_timers[Timers::MLCoupling]);
-#endif
 
 
   // print allocated scratch memory
@@ -3325,12 +3227,10 @@ void FvStructuredSolver<nDim>::initTimers() {
 
   NEW_SUB_TIMER_NOCREATE(m_timers[Timers::BoundaryCondition], "Boundary Conditions", m_timers[Timers::MainLoop]);
 
-  #if defined(WITH_PHYDLL_DIRECT) || defined(WITH_AIXSERVICE) || defined(WITH_PHYDLL) || defined(WITH_REFERENCE_MODEL)
   NEW_SUB_TIMER_NOCREATE(m_timers[Timers::MLCoupling], "MLCoupling", m_timers[Timers::MainLoop]);
   NEW_SUB_TIMER_NOCREATE(m_timers[Timers::Setup], "Setup Coupling", m_timers[Timers::MLCoupling]);
   NEW_SUB_TIMER_NOCREATE(m_timers[Timers::Coupling], "Coupling without Inference", m_timers[Timers::MLCoupling]);
   NEW_SUB_TIMER_NOCREATE(m_timers[Timers::Inference], "Inference Coupling", m_timers[Timers::MLCoupling]);
-  #endif
 
   NEW_SUB_TIMER_NOCREATE(m_timers[Timers::RungeKutta], "RungeKutta", m_timers[Timers::MainLoop]);
 
@@ -8466,98 +8366,63 @@ MBool FvStructuredSolver<nDim>::solutionStep() {
 
   MBool step = false;
   
-  #if defined(WITH_PHYDLL_DIRECT) || defined(WITH_AIXSERVICE) || defined(WITH_PHYDLL) || defined(WITH_REFERENCE_MODEL)
   RECORD_TIMER_START(m_timers[Timers::MLCoupling]);
-  MInt logicalTimeStep = globalTimeStep - m_restartTimeStep;
-  MBool isCouplingStep = m_mlCoupler->isCouplingStep(logicalTimeStep);
-  MBool isInferenceStep = m_mlCoupler->isInferenceStep(logicalTimeStep);
 
-  // (OUTPUT_FIELDS variables removed — replaced by runtime snapshot_writer)
+  // Copy solver double* U/V/W to float input buffers
+  MSize totalCells = static_cast<MSize>(m_nCells[0]) * static_cast<MSize>(m_nCells[1]) * static_cast<MSize>(m_nCells[2]);
+  MFloat* src[3] = {
+    m_cells->pvariables[PV->U],
+    m_cells->pvariables[PV->V],
+    m_cells->pvariables[PV->W]
+  };
+  for (int f = 0; f < 3; ++f) {
+    for (MSize i = 0; i < totalCells; ++i) {
+      m_mlInputBuf[f][i] = static_cast<float>(src[f][i]);
+    }
+  }
 
-  log_message("Logical Time Step: " + std::to_string(logicalTimeStep) + ", Global Time Step: " + std::to_string(globalTimeStep) +
-              ", Restart Time Step: " + std::to_string(m_restartTimeStep) + ", Coupling=" + std::to_string(isCouplingStep) + ", Inference=" + std::to_string(isInferenceStep));
+  // Snapshot: capture "sent" fields (before ML inference)
+  snapshot::write_step(
+    src[0], src[1], src[2],
+    m_nCells[0], m_nCells[1], m_nCells[2],
+    m_nOffsetCells[0], m_nOffsetCells[1], m_nOffsetCells[2],
+    globalTimeStep, "sent");
 
-  log_step(logicalTimeStep, globalTimeStep, m_restartTimeStep, isCouplingStep, isInferenceStep);
+  int delta = m_mlCoupler->step();
 
-  //only apply the fields predicted by the ml and received by PhyDLL every N timesteps
-  if(m_RKStep == 0 && (isInferenceStep || isCouplingStep)){
-    std::cout << "m-AIA: globalTimeStep = " << globalTimeStep << " (logical " << logicalTimeStep << ") is a coupling step!" << "\n";
-    if(isInferenceStep){
-      RECORD_TIMER_START(m_timers[Timers::Inference]);
-    }else{
-      RECORD_TIMER_START(m_timers[Timers::Coupling]);
+  if (delta > 0) {
+    // Copy float output buffers back to solver double* fields
+    for (int f = 0; f < 3; ++f) {
+      for (MSize i = 0; i < totalCells; ++i) {
+        src[f][i] = static_cast<MFloat>(m_mlOutputBuf[f][i]);
+      }
     }
 
-    //Both check if only coupling or inference
-    #if defined(WITH_PHYDLL_DIRECT)
-        //Checks steptype by using isInferenceStep
-        m_mlCoupler->inference(isInferenceStep);
-    #endif
-    #if defined(WITH_PHYDLL) || defined(WITH_AIXSERVICE) || defined(WITH_REFERENCE_MODEL)
-      // Snapshot: capture "sent" fields (before ML inference)
-      snapshot::write_step(
-        m_cells->pvariables[PV->U], m_cells->pvariables[PV->V], m_cells->pvariables[PV->W],
-        m_nCells[0], m_nCells[1], m_nCells[2],
-        m_nOffsetCells[0], m_nOffsetCells[1], m_nOffsetCells[2],
-        globalTimeStep, "sent");
+    // Snapshot: capture "received" fields (after ML inference)
+    snapshot::write_step(
+      src[0], src[1], src[2],
+      m_nCells[0], m_nCells[1], m_nCells[2],
+      m_nOffsetCells[0], m_nOffsetCells[1], m_nOffsetCells[2],
+      globalTimeStep, "received");
 
-      //Checks steptype via internal iteration counter
-      m_mlCoupler->ml_step();
-    #endif
-
-    if(isInferenceStep){
-      RECORD_TIMER_STOP(m_timers[Timers::Inference]);
-    }else{
-      RECORD_TIMER_STOP(m_timers[Timers::Coupling]);
-    }
-
-
-    if(isInferenceStep){
-      RECORD_TIMER_START(m_timers[Timers::Inference]);
-      std::cout << "m-AIA: globalTimeStep = " << globalTimeStep << " (logical " << logicalTimeStep << ") is an inference step!" << "\n";
-      
-      // Snapshot: capture "received" fields (after ML inference)
-      snapshot::write_step(
-        m_cells->pvariables[PV->U], m_cells->pvariables[PV->V], m_cells->pvariables[PV->W],
-        m_nCells[0], m_nCells[1], m_nCells[2],
-        m_nOffsetCells[0], m_nOffsetCells[1], m_nOffsetCells[2],
-        globalTimeStep, "received");
-
-      MInt inferenceIncrement = m_mlCoupler->getInferenceIncrement();
-      // taken from rungeKuttaStep() form 3D structured solver
-      m_physicalTime += inferenceIncrement * m_timeStep * m_timeRef; //mlStepCoeff 
-      m_time += inferenceIncrement * m_timeStep;//mlStepCoeff
-      
-      globalTimeStep += inferenceIncrement;
-      logicalTimeStep = globalTimeStep - m_restartTimeStep;//recalculate now
-
-      //MInt nextInferenceStep = logicalTimeStep + m_mlCoupler->getInferenceInterval();
-      //MInt nextGlobalInferenceStep = nextInferenceStep + m_restartTimeStep;
-      m_mlCoupler->setNextInferenceStep(globalTimeStep, logicalTimeStep);
-
-      step = true;
-      RECORD_TIMER_STOP(m_timers[Timers::Inference]);
-    }
+    m_physicalTime += delta * m_timeStep * m_timeRef;
+    m_time += delta * m_timeStep;
+    globalTimeStep += delta;
+    step = true;
   }
   RECORD_TIMER_STOP(m_timers[Timers::MLCoupling]);
-  if (!isInferenceStep){ 
-  #endif
-  rhs();
 
-  rhsBnd();
-
-  RECORD_TIMER_START(m_timers[Timers::RungeKutta]);
+  if (delta == 0) {
+    rhs();
+    rhsBnd();
+    RECORD_TIMER_START(m_timers[Timers::RungeKutta]);
     step = rungeKuttaStep();
-  RECORD_TIMER_STOP(m_timers[Timers::RungeKutta]);
-
-  RECORD_TIMER_START(m_timers[Timers::SetTimeStep]);
-  if(step) setTimeStep();
-  RECORD_TIMER_STOP(m_timers[Timers::SetTimeStep]);
-
-  lhsBnd();
-  #if defined(WITH_PHYDLL_DIRECT) || defined(WITH_AIXSERVICE) || defined(WITH_PHYDLL) || defined(WITH_REFERENCE_MODEL)
+    RECORD_TIMER_STOP(m_timers[Timers::RungeKutta]);
+    RECORD_TIMER_START(m_timers[Timers::SetTimeStep]);
+    if(step) setTimeStep();
+    RECORD_TIMER_STOP(m_timers[Timers::SetTimeStep]);
+    lhsBnd();
   }
-  #endif
 
   RECORD_TIMER_STOP(m_timers[Timers::MainLoop]);
   RECORD_TIMER_STOP(m_timers[Timers::Run]);

@@ -40,17 +40,7 @@
 #ifdef WITH_PHYDLL_DIRECT
 #include "ML/mlCouplerPhyDLL.h"
 #endif
-#if defined(WITH_PHYDLL)
-#include "ml_coupling/maia/phydll/ml_coupling_maia_phydll.hpp"
-#endif
 
-#if defined(WITH_AIXSERVICE)
-#include "ml_coupling/maia/aix/ml_coupling_maia_aix.hpp"
-#endif
-
-#if defined(WITH_REFERENCE_MODEL)
-#include "ml_coupling/maia/ref/ml_coupling_maia_ref.hpp"
-#endif
 
 #ifdef WITH_SCOREP
 #include <scorep/SCOREP_User.h>
@@ -128,19 +118,7 @@ int MAIA::run() {
   phydll_init((char*)"physical");
   maiaCommWorld = phydll_get_local_mpi_comm();
 #endif
-#ifdef WITH_PHYDLL
-  m_mlCoupler = std::make_unique<MLCouplingMaiaPhyDLL>();
-  m_mlCoupler->init();
-  maiaCommWorld = m_mlCoupler->getComm();
-#endif
-#ifdef WITH_AIXSERVICE
-  m_mlCoupler = std::make_unique<MLCouplingMaiaAix>();
-  m_mlCoupler->init();
-#endif
-#ifdef WITH_REFERENCE_MODEL
-  m_mlCoupler = std::make_unique<MLCouplingMaiaRef>();
-  m_mlCoupler->init();
-#endif
+
   MPI_Comm_size(maiaCommWorld, &noDomains);
   MPI_Comm_rank(maiaCommWorld, &domainId);
   g_mpiInformation.init(domainId, noDomains, maiaCommWorld);
@@ -287,9 +265,7 @@ int MAIA::run() {
 #ifdef WITH_PHYDLL_DIRECT
   phydll_finalize();
 #endif
-#if defined(WITH_PHYDLL) || defined(WITH_AIXSERVICE) || defined(WITH_REFERENCE_MODEL) 
-  m_mlCoupler->finalize();
-#endif
+
 
   #ifdef WITH_SCOREP
       SCOREP_USER_REGION_END(maiaRunRegion);
