@@ -160,10 +160,34 @@ if(WITH_LIKWID)
   add_definitions("-DLIKWID_PERFMON")
 endif()
 add_definitions("-DUSE_CPP_ML_INTERFACE")
-add_subdirectory("${CMAKE_SOURCE_DIR}/CPP-ML-Interface" "${CMAKE_BINARY_DIR}/CPP-ML-Interface")
-include_directories("${CMAKE_SOURCE_DIR}/CPP-ML-Interface/include")
+# Pre-set CMI options: disable providers that require external dependencies (Torch, SmartRedis)
+# to avoid fetching/building them in the MAIA build. The MAIA solver uses FlowExtrapolatorBehavior
+# and Dummy/Aixelerator providers; AIx and Smartsim can be enabled via cmake cache override.
+set(WITH_AIX OFF CACHE BOOL "Enable AIXelerator provider" FORCE)
+set(WITH_SMARTSIM OFF CACHE BOOL "Enable SmartSim provider" FORCE)
+add_subdirectory("${SRC_DIR_ABS}/../../CPP-ML-Interface" "${CMAKE_BINARY_DIR}/CPP-ML-Interface")
+include_directories("${SRC_DIR_ABS}/../../CPP-ML-Interface/include")
 
 include_directories("${CMAKE_BINARY_DIR}/CPP-ML-Interface") # generated_registry.hpp
+# Propagate tomlplusplus include dirs so MAIA object library can find <toml++/toml.h>
+get_target_property(_tomlplusplus_include_dirs tomlplusplus::tomlplusplus INTERFACE_INCLUDE_DIRECTORIES)
+if(_tomlplusplus_include_dirs)
+  include_directories(${_tomlplusplus_include_dirs})
+endif()
+# Fetch HighFive (header-only HDF5 C++ library) for snapshot_writer.hpp
+include(FetchContent)
+set(HIGHFIVE_EXAMPLES OFF CACHE BOOL "" FORCE)
+set(HIGHFIVE_UNIT_TESTS OFF CACHE BOOL "" FORCE)
+set(HIGHFIVE_USE_INSTALL OFF CACHE BOOL "" FORCE)
+FetchContent_Declare(highfive_fetched
+    GIT_REPOSITORY https://github.com/BlueBrain/HighFive.git
+    GIT_TAG v2.9.0
+)
+FetchContent_GetProperties(highfive_fetched)
+if(NOT highfive_fetched_POPULATED)
+  FetchContent_Populate(highfive_fetched)
+  include_directories(${highfive_fetched_SOURCE_DIR}/include)
+endif()
 list(APPEND LIBRARIES cpp_ml_interface_library tomlplusplus::tomlplusplus)
 
 add_definitions("-DWITH_SCOREP")
@@ -204,6 +228,8 @@ endif()
 # Create object library, which serves as a container for all .o files
 add_library(${OBJ_LIB_TARGET} OBJECT ${src_lib})
 set_target_properties(${OBJ_LIB_TARGET} PROPERTIES OUTPUT_NAME ${LIB_NAME})
+# Propagate CMI flags (-frtti for RTTI, include dirs for toml++) to object library
+target_link_libraries(${OBJ_LIB_TARGET} PUBLIC cpp_ml_interface_library)
 
 # Create executable target
 add_executable(${BIN_TARGET} $<TARGET_OBJECTS:${OBJ_LIB_TARGET}> ${SRC_DIR_ABS}/maia.cpp)

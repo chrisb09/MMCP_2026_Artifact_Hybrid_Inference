@@ -1,33 +1,30 @@
+
+#analysis/
+analysis_time_per_steps.png
+auxdata/
+BUILD-SCOREP
+core.*
+# Core dumps and scratch files
+CPP-ML-Interface/BUILD
+CPP-ML-Interface/extern/
+custom_logs/cmi-build/
+# Debugging, temp files and analysis outputs
+forces/
+forces.0.dat
+grid_les_medium.hdf5
+input/*copy*.toml
 input/grid_les_medium.hdf5
 input/restart_les_init_medium.hdf5
 input/transformer_inference_scripted_fw2.pt
-
-BUILD-SCOREP
-CPP-ML-Interface/BUILD
-CPP-ML-Interface/extern/
-out/
-scorep-*
-
-
-# Core dumps and scratch files
-core.*
-input/*copy*.toml
-
-# Debugging, temp files and analysis outputs
-Residual
-auxdata/
-#analysis/
-analysis_time_per_steps.png
-forces.0.dat
-forces/
-grid_les_medium.hdf5
 logs/
-m_log
 maia_changes.txt
 maia_vars_doc.md
+m_log
+out/
 output_*.txt
 phydll-*.log
 phydll-tom/
 prev_execs/
+Residual
+scorep-*
 temp_properties_run_les_ref_medium.toml
-custom_logs/

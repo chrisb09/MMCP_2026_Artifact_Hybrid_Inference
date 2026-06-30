@@ -270,7 +270,7 @@ FvStructuredSolver<nDim>::FvStructuredSolver(MInt solverId, StructuredGrid<nDim>
   MInt mlCubeD = Context::getBasicProperty<MInt>("mlCubeD", AT_, &defaultMLCubeD);
 
   // Allocate float buffers for U/V/W double->float copy
-  MSize totalCells = static_cast<MSize>(m_nCells[0]) * static_cast<MSize>(m_nCells[1]) * static_cast<MSize>(m_nCells[2]);
+  MLong totalCells = static_cast<MLong>(m_nCells[0]) * static_cast<MLong>(m_nCells[1]) * static_cast<MLong>(m_nCells[2]);
   for (int f = 0; f < 3; ++f) {
     m_mlInputBuf[f].resize(totalCells);
     m_mlOutputBuf[f].resize(totalCells);
@@ -293,7 +293,7 @@ FvStructuredSolver<nDim>::FvStructuredSolver(MInt solverId, StructuredGrid<nDim>
   ConfigOverrides overrides;
   MPI_Comm ml_comm = globalMaiaCommWorld();
   overrides.dotted["provider.app_comm"] = static_cast<void*>(&ml_comm);
-  overrides.dotted["provider.model_path"] = Context::getBasicProperty<MString>("modelPath", AT_);
+  overrides.dotted["provider.model_file"] = Context::getBasicProperty<MString>("modelPath", AT_);
   overrides.dotted["behavior.global_step_offset"] = static_cast<int64_t>(m_restartTimeStep);
   overrides.dotted["behavior.inference_interval"] = static_cast<int64_t>(mlInterval);
   overrides.dotted["behavior.coupled_steps_before_inference"] = static_cast<int64_t>(mlInputSeqLen);
@@ -315,11 +315,11 @@ FvStructuredSolver<nDim>::FvStructuredSolver(MInt solverId, StructuredGrid<nDim>
   m_mlCoupler.reset(MLCoupling<float,float>::create_from_config(
       "./config.toml", std::move(input_data), std::move(output_data), overrides));
 
-  log_init("Setting up ML Coupler (new CMI)",
-           {"mlInterval", "mlInputLength", "solutionInterval",
+  log_init<9>("Setting up ML Coupler (new CMI)",
+           std::array<std::string, 9>{"mlInterval", "mlInputLength", "solutionInterval",
             "mlStepCoefficient", "mlForecastWindow", "mlScalingFactor",
             "mlInputStepDistance", "mlCubeOverlap", "mlCubeD"},
-           {mlInterval, mlInputSeqLen, hdfOutputInterval,
+           std::array<int, 9>{mlInterval, mlInputSeqLen, hdfOutputInterval,
             mlStepCoeff, mlForecastWindow, static_cast<MInt>(mlScalingFactor),
             mlInputStepDistance, mlCubeOverlap, mlCubeD});
   snapshot::init();
@@ -8369,14 +8369,14 @@ MBool FvStructuredSolver<nDim>::solutionStep() {
   RECORD_TIMER_START(m_timers[Timers::MLCoupling]);
 
   // Copy solver double* U/V/W to float input buffers
-  MSize totalCells = static_cast<MSize>(m_nCells[0]) * static_cast<MSize>(m_nCells[1]) * static_cast<MSize>(m_nCells[2]);
+  MLong totalCells = static_cast<MLong>(m_nCells[0]) * static_cast<MLong>(m_nCells[1]) * static_cast<MLong>(m_nCells[2]);
   MFloat* src[3] = {
     m_cells->pvariables[PV->U],
     m_cells->pvariables[PV->V],
     m_cells->pvariables[PV->W]
   };
   for (int f = 0; f < 3; ++f) {
-    for (MSize i = 0; i < totalCells; ++i) {
+    for (MLong i = 0; i < totalCells; ++i) {
       m_mlInputBuf[f][i] = static_cast<float>(src[f][i]);
     }
   }
@@ -8393,7 +8393,7 @@ MBool FvStructuredSolver<nDim>::solutionStep() {
   if (delta > 0) {
     // Copy float output buffers back to solver double* fields
     for (int f = 0; f < 3; ++f) {
-      for (MSize i = 0; i < totalCells; ++i) {
+      for (MLong i = 0; i < totalCells; ++i) {
         src[f][i] = static_cast<MFloat>(m_mlOutputBuf[f][i]);
       }
     }
