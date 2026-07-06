@@ -163,7 +163,7 @@ add_definitions("-DUSE_CPP_ML_INTERFACE")
 # Pre-set CMI options: disable providers that require external dependencies (Torch, SmartRedis)
 # to avoid fetching/building them in the MAIA build. The MAIA solver uses FlowExtrapolatorBehavior
 # and Dummy/Aixelerator providers; AIx and Smartsim can be enabled via cmake cache override.
-set(WITH_AIX OFF CACHE BOOL "Enable AIXelerator provider" FORCE)
+set(WITH_AIX ON CACHE BOOL "Enable AIXelerator provider" FORCE)
 set(WITH_SMARTSIM OFF CACHE BOOL "Enable SmartSim provider" FORCE)
 add_subdirectory("${SRC_DIR_ABS}/../../CPP-ML-Interface" "${CMAKE_BINARY_DIR}/CPP-ML-Interface")
 include_directories("${SRC_DIR_ABS}/../../CPP-ML-Interface/include")

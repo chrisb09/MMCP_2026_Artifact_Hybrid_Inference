@@ -151,9 +151,9 @@ executionRecipe = "RECIPE_BASE"
 # TRANSFORMER:
 #modelPath = "/home/rwth0792/mmcp_2026_artifact/input/transformer_inference_scripted_fw2.pt"
 modelPath = "./input/transformer_inference_scripted_fw2.pt"
-mlInterval = 5
+mlInterval = 1
 mlInputLength = 5
-mlStepCoefficient = 12
+mlStepCoefficient = 25
 mlForecastWindow = 2
 mlScalingFactor = 1
 mlCubeOverlap = 0

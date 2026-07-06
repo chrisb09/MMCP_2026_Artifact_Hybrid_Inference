@@ -8368,29 +8368,45 @@ MBool FvStructuredSolver<nDim>::solutionStep() {
   
   RECORD_TIMER_START(m_timers[Timers::MLCoupling]);
 
-  // Copy solver double* U/V/W to float input buffers
   MLong totalCells = static_cast<MLong>(m_nCells[0]) * static_cast<MLong>(m_nCells[1]) * static_cast<MLong>(m_nCells[2]);
-  MFloat* src[3] = {
-    m_cells->pvariables[PV->U],
-    m_cells->pvariables[PV->V],
-    m_cells->pvariables[PV->W]
-  };
-  for (int f = 0; f < 3; ++f) {
-    for (MLong i = 0; i < totalCells; ++i) {
-      m_mlInputBuf[f][i] = static_cast<float>(src[f][i]);
+  int delta = 0;
+  if (m_RKStep == 0) {
+    // Copy solver double* U/V/W to float input buffers
+    MFloat* src[3] = {
+      m_cells->pvariables[PV->U],
+      m_cells->pvariables[PV->V],
+      m_cells->pvariables[PV->W]
+    };
+    for (int f = 0; f < 3; ++f) {
+      for (MLong i = 0; i < totalCells; ++i) {
+        m_mlInputBuf[f][i] = static_cast<float>(src[f][i]);
+      }
     }
+
+    // Copy input buffers to output buffers so ghost cells retain
+    // solver CFD values through the ML step.  The FlowExtrapolator
+    // clear_output_active_region() only zeros the interior; ghost
+    // cells must carry the current CFD state to match the old CMI.
+    for (int f = 0; f < 3; ++f) {
+      m_mlOutputBuf[f] = m_mlInputBuf[f];
+    }
+
+    // Snapshot: capture "sent" fields (before ML inference)
+    snapshot::write_step(
+      src[0], src[1], src[2],
+      m_nCells[0], m_nCells[1], m_nCells[2],
+      m_nOffsetCells[0], m_nOffsetCells[1], m_nOffsetCells[2],
+      globalTimeStep, "sent");
+
+    delta = m_mlCoupler->step();
   }
 
-  // Snapshot: capture "sent" fields (before ML inference)
-  snapshot::write_step(
-    src[0], src[1], src[2],
-    m_nCells[0], m_nCells[1], m_nCells[2],
-    m_nOffsetCells[0], m_nOffsetCells[1], m_nOffsetCells[2],
-    globalTimeStep, "sent");
-
-  int delta = m_mlCoupler->step();
-
   if (delta > 0) {
+    MFloat* src[3] = {
+      m_cells->pvariables[PV->U],
+      m_cells->pvariables[PV->V],
+      m_cells->pvariables[PV->W]
+    };
     // Copy float output buffers back to solver double* fields
     for (int f = 0; f < 3; ++f) {
       for (MLong i = 0; i < totalCells; ++i) {
@@ -8409,6 +8425,9 @@ MBool FvStructuredSolver<nDim>::solutionStep() {
     m_time += delta * m_timeStep;
     globalTimeStep += delta;
     step = true;
+
+    // Update boundary conditions/ghost cells with the new solver state
+    lhsBnd();
   }
   RECORD_TIMER_STOP(m_timers[Timers::MLCoupling]);
 
