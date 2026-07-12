@@ -481,8 +481,8 @@ MPI_Type_contiguous(int count, MPI_Datatype old_type, MPI_Datatype* new_type_p);
 [[deprecated("Use the wrapper MPI_Type_vector(..., AT_) instead!")]] int
 MPI_Type_vector(int count, int solverlength, int stride, MPI_Datatype oldtype, MPI_Datatype* newtype);
 
-[[deprecated("Use the wrapper MPI_Type_struct(..., AT_) instead!")]] int
-MPI_Type_struct(int count, int* array_of_solverlengths, MPI_Aint* array_of_displacements, MPI_Datatype* array_of_types,
+[[deprecated("Use the wrapper MPI_Type_create_struct(..., AT_) instead!")]] int
+MPI_Type_create_struct(int count, int* array_of_solverlengths, MPI_Aint* array_of_displacements, MPI_Datatype* array_of_types,
                 MPI_Datatype* newtype);
 
 [[deprecated("Use the wrapper MPI_Type_create_hvector(..., AT_) instead!")]] int

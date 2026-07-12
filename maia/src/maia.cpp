@@ -22,9 +22,12 @@
 #ifdef _OPENMP
 #include <omp.h>
 #endif
+#include <algorithm>
+#include <cctype>
 #include <climits>
 #include <cstdlib>
 #include <fftw3-mpi.h>
+#include <string>
 #include "INCLUDE/maialikwid.h"
 #include "compiler_config.h"
 #include "environment.h"
@@ -51,6 +54,21 @@ SCOREP_USER_REGION_DEFINE(maiaRunRegion);
 using namespace std;
 
 Environment* mEnvironment = nullptr;
+
+namespace {
+bool usesPhydllProvider()
+{
+  const char* raw = std::getenv("CPP_ML_INTERFACE_PROVIDER_ENV");
+  if(raw == nullptr || *raw == '\0') {
+    return false;
+  }
+  std::string provider(raw);
+  std::transform(provider.begin(), provider.end(), provider.begin(), [](unsigned char c) {
+    return static_cast<char>(std::toupper(c));
+  });
+  return provider == "PHYDLL";
+}
+} // namespace
 
 int main(int argc, char* argv[]) {
   // Create MAIA instance
@@ -109,14 +127,22 @@ int MAIA::run() {
    * that execute the DL script. 
    * As soon as m-AIA calls into collective MPI operations on MPI_COMM_WORLD,
    * a deadlock will occur as the Python DL processes are not part of that.
-   * As a solution we encapsulate a "local maia world communicator" in
-   * the global mpiInformation object and replace all occurrences of 
-   * MPI_COMM_WORLD by globalMaiaCommWorld().
+   * As a solution we create an application-owned solver communicator before
+   * MAIA performs any collectives and store it in mpiInformation. The PhyDLL
+   * DL clients participate in this same split with MPI_UNDEFINED. PhyDLL then
+   * performs its own separate split when CMI initializes it later.
    */
   MPI_Comm maiaCommWorld = MPI_COMM_WORLD;
-#ifdef WITH_PHYDLL_DIRECT
-  phydll_init((char*)"physical");
-  maiaCommWorld = phydll_get_local_mpi_comm();
+  bool ownsMaiaCommWorld = false;
+#ifdef MLCOUPLING_WITH_PHYDLL
+  if(usesPhydllProvider()) {
+    int worldRank = 0;
+    MPI_Comm_rank(MPI_COMM_WORLD, &worldRank);
+    // Bypass MAIA's MPI diagnostic overload here: this split must match the
+    // DL client's first world-communicator split exactly.
+    PMPI_Comm_split(MPI_COMM_WORLD, 0, worldRank, &maiaCommWorld);
+    ownsMaiaCommWorld = true;
+  }
 #endif
 
   MPI_Comm_size(maiaCommWorld, &noDomains);
@@ -124,7 +150,9 @@ int MAIA::run() {
   g_mpiInformation.init(domainId, noDomains, maiaCommWorld);
 
   // Set MPI error handling (return error and handle in code)
-  MPI_Comm_set_errhandler(globalMaiaCommWorld(), MPI_ERRORS_RETURN);
+  if(!usesPhydllProvider()) {
+    PMPI_Comm_set_errhandler(globalMaiaCommWorld(), MPI_ERRORS_RETURN);
+  }
 
 #ifndef MAIA_WINDOWS
   fftw_mpi_init();
@@ -262,14 +290,13 @@ int MAIA::run() {
   fftw_mpi_cleanup(); // note(Fabian Orland, April 2nd, 2025) commented out for now because it leads to invalid free on exit
 #endif
 
-#ifdef WITH_PHYDLL_DIRECT
-  phydll_finalize();
-#endif
-
-
   #ifdef WITH_SCOREP
       SCOREP_USER_REGION_END(maiaRunRegion);
-#endif
+  #endif
+  if(ownsMaiaCommWorld) {
+    PMPI_Barrier(MPI_COMM_WORLD);
+    PMPI_Comm_free(&maiaCommWorld);
+  }
   MPI_Finalize();
 
   return EXIT_SUCCESS;

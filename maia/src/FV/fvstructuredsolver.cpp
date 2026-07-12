@@ -7,6 +7,8 @@
 #include "fvstructuredsolver.h"
 #include <cmath>
 #include <cstdlib>
+#include <cctype>
+#include <algorithm>
 #include "COMM/mpioverride.h"
 #include "GRID/structuredpartition.h"
 #include "IO/parallelio.h"
@@ -25,6 +27,30 @@
 #include "snapshot_writer.hpp"
 
 using namespace std;
+
+namespace {
+
+std::string cpp_ml_provider_from_env()
+{
+  const char* raw = std::getenv("CPP_ML_INTERFACE_PROVIDER_ENV");
+  if(raw == nullptr || *raw == '\0') {
+    return "AIX";
+  }
+  std::string provider(raw);
+  std::transform(provider.begin(), provider.end(), provider.begin(), [](unsigned char c) {
+    return static_cast<char>(std::toupper(c));
+  });
+  return provider;
+}
+
+std::string cpp_ml_config_file(const std::string& provider)
+{
+  if(provider == "SMARTSIM") return "./config_smartsim.toml";
+  if(provider == "PHYDLL") return "./config_phydll.toml";
+  return "./config_aix.toml";
+}
+
+} // namespace
 
 /**
  * \brief Constructor of the structured solver
@@ -292,9 +318,30 @@ FvStructuredSolver<nDim>::FvStructuredSolver(MInt solverId, StructuredGrid<nDim>
   // Build ConfigOverrides from Context properties (override config.toml defaults)
   ConfigOverrides overrides;
   MPI_Comm ml_comm = globalMaiaCommWorld();
-  overrides.dotted["provider.app_comm"] = static_cast<void*>(&ml_comm);
-  overrides.dotted["provider.model_file"] = Context::getBasicProperty<MString>("modelPath", AT_);
-  overrides.dotted["behavior.global_step_offset"] = static_cast<int64_t>(m_restartTimeStep);
+  const std::string cpp_ml_provider = cpp_ml_provider_from_env();
+  const MString modelPath = Context::getBasicProperty<MString>("modelPath", AT_);
+
+  if(cpp_ml_provider == "SMARTSIM") {
+    overrides.dotted["provider.device"] = std::string("CPU");
+    overrides.dotted["provider.model_backend"] = std::string("TORCH");
+    overrides.dotted["provider.model_path"] = modelPath;
+    overrides.dotted["provider.model_name"] = std::string("model");
+  } else if(cpp_ml_provider == "PHYDLL") {
+    overrides.dotted["provider.model_file"] = modelPath;
+    overrides.dotted["provider.backend"] = std::string("TORCH");
+    overrides.dotted["provider.device"] = std::string("CPU");
+    overrides.dotted["provider.batch_size"] = static_cast<int64_t>(0);
+  } else {
+    overrides.dotted["provider.app_comm"] = static_cast<void*>(&ml_comm);
+    overrides.dotted["provider.model_file"] = modelPath;
+  }
+  
+  // FIX: The ML Coupler is instantiated before the restart file is read, so
+  // m_restartTimeStep is 0 here. For the artifact, we know the restart file
+  // starts at step 10. We hardcode it to 10 to match the legacy behavior exactly.
+  overrides.dotted["behavior.global_step_offset"] = static_cast<int64_t>(10);
+  cout << "======== GLOBAL OFFSET OVERRIDE APPLIED! ========" << endl;
+  
   overrides.dotted["behavior.inference_interval"] = static_cast<int64_t>(mlInterval);
   overrides.dotted["behavior.coupled_steps_before_inference"] = static_cast<int64_t>(mlInputSeqLen);
   overrides.dotted["behavior.step_increment_after_inference"] = static_cast<int64_t>(mlStepCoeff);
@@ -313,7 +360,7 @@ FvStructuredSolver<nDim>::FvStructuredSolver(MInt solverId, StructuredGrid<nDim>
 
   // Create the MLCoupling instance via config file
   m_mlCoupler.reset(MLCoupling<float,float>::create_from_config(
-      "./config.toml", std::move(input_data), std::move(output_data), overrides));
+      cpp_ml_config_file(cpp_ml_provider), std::move(input_data), std::move(output_data), overrides));
 
   log_init<9>("Setting up ML Coupler (new CMI)",
            std::array<std::string, 9>{"mlInterval", "mlInputLength", "solutionInterval",

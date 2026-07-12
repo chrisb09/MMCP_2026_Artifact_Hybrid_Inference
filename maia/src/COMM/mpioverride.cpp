@@ -257,7 +257,7 @@ int MPI_Comm_create(MPI_Comm comm, MPI_Group group, MPI_Comm* newcomm, const MSt
   // Note: do not change error handling for Paraview, at the moment this results in "MPI_ERR_COMM:
   // invalid communicator" erros when loading multisolver grids (with inactive ranks for a solver)
 #ifndef PVPLUGIN
-  if(comm != MPI_COMM_NULL) {
+  if(comm != MPI_COMM_NULL && *newcomm != MPI_COMM_NULL) {
     // Set error handling for new communicator
     MPI_Comm_set_errhandler(*newcomm, MPI_ERRORS_RETURN);
   }

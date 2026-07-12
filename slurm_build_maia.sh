@@ -30,6 +30,9 @@ echo "Node: $(hostname)"
 echo "CPUs allocated: ${SLURM_CPUS_ON_NODE:-96}"
 echo "Repository dir: ${REPO_DIR}"
 
+maia_build_dir="${MAIA_BUILD_DIR:-${REPO_DIR}/maia/build_gnu_production_cmi}"
+echo "Using unified non-Score-P build directory: ${maia_build_dir}"
+
 CPP_ML_DIR="${REPO_DIR}/CPP-ML-Interface"
 
 # Source MAIA environment (modules)
@@ -40,6 +43,9 @@ source ./setup_env_claix23.sh
 # Ensure CMI extern submodules are initialized (AIxeleratorService, SmartRedis)
 echo "Initializing CMI submodules..."
 git -C "${CPP_ML_DIR}" submodule update --init --recursive || true
+
+echo "Building external PhyDLL runtime..."
+bash "${CPP_ML_DIR}/build_phydll.sh"
 
 # Ensure libtorch symlink exists for CMI
 if [ ! -d "${CPP_ML_DIR}/extern/libtorch" ]; then
@@ -54,13 +60,23 @@ echo "Using NPROC=${NPROC}"
 echo "Installing Python 'clang' + 'libclang' for registry generation..."
 pip install "clang==17.0.6" "libclang==17.0.6" 2>&1
 
-# Step 1: Build CMI standalone first (minimal deps) to verify registry generator changes
-echo "=== Step 1: Building CMI standalone with minimal deps ==="
-mkdir -p "${REPO_DIR}/cmi-build"
-cd "${REPO_DIR}/cmi-build"
+# Step 1: Build CMI standalone first with every runtime provider enabled.
+echo "=== Step 1: Building unified CMI standalone ==="
+CMI_BUILD_DIR="${REPO_DIR}/cmi-build-all-providers"
+echo "Using CMI_BUILD_DIR=${CMI_BUILD_DIR}"
+mkdir -p "${CMI_BUILD_DIR}"
+cd "${CMI_BUILD_DIR}"
 cmake "${CPP_ML_DIR}" \
-    -DWITH_AIX=OFF \
-    -DWITH_SMARTSIM=OFF \
+    -DWITH_AIX=ON \
+    -DWITH_SMARTSIM=ON \
+    -DWITH_PHYDLL=ON \
+    -DWITH_SCOREP=OFF \
+    -DAIX_USE_PREBUILT=OFF \
+    -DAIX_SKIP_VENV_CREATION=ON \
+    -DLIBTORCH_DIR="${CPP_ML_DIR}/extern/libtorch" \
+    -DTORCH_VERSION=2.6.0 \
+    -DBUILD_TESTS=OFF \
+    -DCMAKE_CXX_FLAGS:STRING="-DFLOW_DUMP_DEBUG" \
     -DCMAKE_BUILD_TYPE=Release
 
 # Point libclang to the pip-installed native library for registry generation
@@ -75,35 +91,38 @@ echo "CMI build completed."
 # Step 2: Build and run CMI unit tests
 echo "=== Step 2: Running CMI tests ==="
 make -j"${NPROC}" test_behavior_flow_extrapolator
-cd "${REPO_DIR}/cmi-build"
+cd "${CMI_BUILD_DIR}"
 ctest --output-on-failure -R test_behavior_flow_extrapolator || echo "Warning: test executable not found, trying direct run..."
 ./test/test_behavior_flow_extrapolator 2>&1 || echo "Tests skipped (not built)."
 
 # Step 3: Build MAIA (with CMI built in-tree via add_subdirectory)
 echo "=== Step 3: Cleaning old MAIA build ==="
 cd "${REPO_DIR}/maia"
-rm -rf build_gnu_production
+rm -rf "${maia_build_dir}" build_gnu_production
 
 echo "=== Step 4: Configuring MAIA ==="
 export SCOREP_WRAPPER_INSTRUMENTER_FLAGS="--verbose=1 --nocompiler --user --mpp=mpi --io=none --memory=none --thread=none --nocuda"
 export SCOREP_ENABLE_CUDA=0
 
-# CMI build options (WITH_AIX=OFF, WITH_SMARTSIM=OFF) are set in maia/src/CMakeLists.txt
-# to avoid fetching Torch / building AIxeleratorService during the MAIA build.
-# Enable them by overriding via cmake cache when AIx/Torch dependencies are available.
 ./configure.py 1 2 \
-    --enable-instrumentation scorep --instrument mpi --instrument user \
-    --disable-updateGitSubmodules
+    --disable-updateGitSubmodules \
+    --build-dir-name "${maia_build_dir}"
 
 # Append -Wno-array-bounds to suppress GCC 13.2 false positive in existing MAIA code.
 # This must come AFTER configure.py because MAIA's GNU.cmake sets -Warray-bounds=2
 # which would re-enable the warning if -Wno-array-bounds came first via CXXFLAGS.
-cd "${REPO_DIR}/maia/build_gnu_production"
+cd "${maia_build_dir}"
 CURRENT_FLAGS=$(cmake -LA . 2>/dev/null | grep "^CMAKE_CXX_FLAGS:STRING=" | sed 's/^CMAKE_CXX_FLAGS:STRING=//')
-cmake . -DCMAKE_CXX_FLAGS:STRING="${CURRENT_FLAGS} -Wno-array-bounds"
+cmake . \
+    -DCMAKE_CXX_FLAGS:STRING="${CURRENT_FLAGS} -Wno-array-bounds -DFLOW_DUMP_DEBUG" \
+    -DWITH_SCOREP=OFF \
+    -DAIX_USE_PREBUILT=OFF \
+    -DAIX_SKIP_VENV_CREATION=ON \
+    -DLIBTORCH_DIR="${CPP_ML_DIR}/extern/libtorch" \
+    -DTORCH_VERSION=2.6.0 \
+    -DBUILD_TESTS=OFF
 
 echo "=== Step 5: Building MAIA ==="
-cd "${REPO_DIR}/maia"
-make -j"${NPROC}"
+cmake --build "${maia_build_dir}" -j"${NPROC}"
 
 echo "=== Slurm Build Job Completed Successfully ==="
