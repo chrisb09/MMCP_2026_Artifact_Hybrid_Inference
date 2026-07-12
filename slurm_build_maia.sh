@@ -112,6 +112,14 @@ ctest --output-on-failure -R test_behavior_flow_extrapolator || echo "Warning: t
 echo "=== Step 3: Cleaning old MAIA build ==="
 cd "${REPO_DIR}/maia"
 rm -rf "${maia_build_dir}"
+# configure.py always creates this compatibility symlink, even when a custom
+# build directory is requested. It must not retain the prior plain build.
+if [ -L build_gnu_production ]; then
+    rm build_gnu_production
+elif [ -e build_gnu_production ]; then
+    echo "Refusing to replace non-symlink maia/build_gnu_production." >&2
+    exit 1
+fi
 
 echo "=== Step 4: Configuring MAIA ==="
 export SCOREP_WRAPPER_INSTRUMENTER_FLAGS="--verbose=1 --nocompiler --user --mpp=mpi --io=none --memory=none --thread=none --nocuda"
