@@ -10,6 +10,12 @@
 
 set -euo pipefail
 
+with_scorep="${WITH_SCOREP:-OFF}"
+if [[ "${with_scorep}" != "ON" && "${with_scorep}" != "OFF" ]]; then
+    echo "WITH_SCOREP must be ON or OFF, got '${with_scorep}'." >&2
+    exit 2
+fi
+
 # Determine the repo root directory
 if [ -n "${SLURM_SUBMIT_DIR:-}" ]; then
     REPO_DIR="${SLURM_SUBMIT_DIR}"
@@ -30,8 +36,15 @@ echo "Node: $(hostname)"
 echo "CPUs allocated: ${SLURM_CPUS_ON_NODE:-96}"
 echo "Repository dir: ${REPO_DIR}"
 
-maia_build_dir="${MAIA_BUILD_DIR:-${REPO_DIR}/maia/build_gnu_production_cmi}"
-echo "Using unified non-Score-P build directory: ${maia_build_dir}"
+build_variant="plain"
+build_suffix=""
+if [[ "${with_scorep}" == "ON" ]]; then
+    build_variant="scorep"
+    build_suffix="_scorep"
+    export USE_SCOREP=1
+fi
+maia_build_dir="${MAIA_BUILD_DIR:-${REPO_DIR}/maia/build_gnu_production_cmi${build_suffix}}"
+echo "Using unified ${build_variant} build directory: ${maia_build_dir}"
 
 CPP_ML_DIR="${REPO_DIR}/CPP-ML-Interface"
 
@@ -62,7 +75,7 @@ pip install "clang==17.0.6" "libclang==17.0.6" 2>&1
 
 # Step 1: Build CMI standalone first with every runtime provider enabled.
 echo "=== Step 1: Building unified CMI standalone ==="
-CMI_BUILD_DIR="${REPO_DIR}/cmi-build-all-providers"
+CMI_BUILD_DIR="${CMI_BUILD_DIR:-${REPO_DIR}/cmi-build-all-providers${build_suffix}}"
 echo "Using CMI_BUILD_DIR=${CMI_BUILD_DIR}"
 mkdir -p "${CMI_BUILD_DIR}"
 cd "${CMI_BUILD_DIR}"
@@ -70,7 +83,7 @@ cmake "${CPP_ML_DIR}" \
     -DWITH_AIX=ON \
     -DWITH_SMARTSIM=ON \
     -DWITH_PHYDLL=ON \
-    -DWITH_SCOREP=OFF \
+    -DWITH_SCOREP="${with_scorep}" \
     -DAIX_USE_PREBUILT=OFF \
     -DAIX_SKIP_VENV_CREATION=ON \
     -DLIBTORCH_DIR="${CPP_ML_DIR}/extern/libtorch" \
@@ -98,7 +111,7 @@ ctest --output-on-failure -R test_behavior_flow_extrapolator || echo "Warning: t
 # Step 3: Build MAIA (with CMI built in-tree via add_subdirectory)
 echo "=== Step 3: Cleaning old MAIA build ==="
 cd "${REPO_DIR}/maia"
-rm -rf "${maia_build_dir}" build_gnu_production
+rm -rf "${maia_build_dir}"
 
 echo "=== Step 4: Configuring MAIA ==="
 export SCOREP_WRAPPER_INSTRUMENTER_FLAGS="--verbose=1 --nocompiler --user --mpp=mpi --io=none --memory=none --thread=none --nocuda"
@@ -115,7 +128,7 @@ cd "${maia_build_dir}"
 CURRENT_FLAGS=$(cmake -LA . 2>/dev/null | grep "^CMAKE_CXX_FLAGS:STRING=" | sed 's/^CMAKE_CXX_FLAGS:STRING=//')
 cmake . \
     -DCMAKE_CXX_FLAGS:STRING="${CURRENT_FLAGS} -Wno-array-bounds -DFLOW_DUMP_DEBUG" \
-    -DWITH_SCOREP=OFF \
+    -DWITH_SCOREP="${with_scorep}" \
     -DAIX_USE_PREBUILT=OFF \
     -DAIX_SKIP_VENV_CREATION=ON \
     -DLIBTORCH_DIR="${CPP_ML_DIR}/extern/libtorch" \

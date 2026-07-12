@@ -28,3 +28,11 @@ prev_execs/
 Residual
 scorep-*
 temp_properties_run_les_ref_medium.toml
+analysis/*.csv
+analysis/*.png
+analysis/*.txt
+cmi-build*/
+custom_logs/
+debug_dumps/
+scratch/
+temp_*_properties.toml

@@ -1,0 +1,44 @@
+[general]
+coupling_type = "STATIC"
+
+[logging]
+level = "info"
+
+[provider]
+class = "Smartsim"
+device = "CPU"
+model_backend = "TORCH"
+model_path = ""
+model_name = "model"
+host = ""
+port = -1
+nodes = 1
+num_gpus = -1
+first_gpu = 0
+batch_size = 0
+min_batch_size = 0
+min_batch_timeout = 0
+command_timeout = 60000
+socket_timeout = 60000
+model_timeout = 60000
+
+[behavior]
+class = "FlowExtrapolatorBehavior"
+inference_interval = 5
+coupled_steps_before_inference = 5
+step_increment_after_inference = 12
+hdf_output_interval = 50
+total_timesteps = 300
+scaling_factor = 1.0
+forecast_window = 2
+input_step_distance = 1
+inference_start_step = 5
+global_step_offset = 0
+
+[application]
+class = "MLCouplingApplicationFlowExtrapolator"
+cube_dimension = 8
+cube_overlap = 0
+input_sequence_length = 5
+forecast_window = 2
+n_ghost_layers = 0

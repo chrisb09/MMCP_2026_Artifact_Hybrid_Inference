@@ -43,6 +43,12 @@ std::string cpp_ml_provider_from_env()
   return provider;
 }
 
+std::string cpp_ml_device_from_env()
+{
+  const char* raw = std::getenv("CPP_ML_INTERFACE_DEVICE");
+  return (raw == nullptr || *raw == '\0') ? "CPU" : std::string(raw);
+}
+
 std::string cpp_ml_config_file(const std::string& provider)
 {
   if(provider == "SMARTSIM") return "./config_smartsim.toml";
@@ -319,17 +325,18 @@ FvStructuredSolver<nDim>::FvStructuredSolver(MInt solverId, StructuredGrid<nDim>
   ConfigOverrides overrides;
   MPI_Comm ml_comm = globalMaiaCommWorld();
   const std::string cpp_ml_provider = cpp_ml_provider_from_env();
+  const std::string cpp_ml_device = cpp_ml_device_from_env();
   const MString modelPath = Context::getBasicProperty<MString>("modelPath", AT_);
 
   if(cpp_ml_provider == "SMARTSIM") {
-    overrides.dotted["provider.device"] = std::string("CPU");
+    overrides.dotted["provider.device"] = cpp_ml_device;
     overrides.dotted["provider.model_backend"] = std::string("TORCH");
     overrides.dotted["provider.model_path"] = modelPath;
     overrides.dotted["provider.model_name"] = std::string("model");
   } else if(cpp_ml_provider == "PHYDLL") {
     overrides.dotted["provider.model_file"] = modelPath;
     overrides.dotted["provider.backend"] = std::string("TORCH");
-    overrides.dotted["provider.device"] = std::string("CPU");
+    overrides.dotted["provider.device"] = cpp_ml_device;
     overrides.dotted["provider.batch_size"] = static_cast<int64_t>(0);
   } else {
     overrides.dotted["provider.app_comm"] = static_cast<void*>(&ml_comm);

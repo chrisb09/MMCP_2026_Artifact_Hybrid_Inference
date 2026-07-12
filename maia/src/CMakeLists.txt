@@ -191,7 +191,9 @@ if(NOT highfive_fetched_POPULATED)
 endif()
 list(APPEND LIBRARIES cpp_ml_interface_library tomlplusplus::tomlplusplus)
 
-add_definitions("-DWITH_SCOREP")
+if(WITH_SCOREP)
+  add_definitions("-DWITH_SCOREP")
+endif()
 
 # Enable debug functions via command line
 if(ENABLE_DEBUG_FUNCTION)
