@@ -31,6 +31,7 @@ if [[ "${build_variant}" == "scorep" ]]; then
 fi
 source "${project_folder}/setup_env_claix23.sh"
 mkdir -p "${run_dir}/out"
+ln -s "${project_folder}/input" "${run_dir}/input"
 cp "${project_folder}/config_aix.toml" "${run_dir}/"
 cp "${project_folder}/input/properties_run_les_ref_medium.toml" "${run_dir}/properties.toml"
 sed -i "s/^timeSteps *=.*/timeSteps = ${run_steps}/" "${run_dir}/properties.toml"

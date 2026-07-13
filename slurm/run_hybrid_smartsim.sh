@@ -23,7 +23,7 @@ build_variant="${BUILD_VARIANT:-plain}"
 build_suffix=""
 [[ "${build_variant}" == "scorep" ]] && build_suffix="_scorep"
 maia_build_dir="${MAIA_BUILD_DIR:-${project_folder}/maia/build_gnu_production_cmi${build_suffix}}"
-smart_env="${SMARTSIM_PYTHON_ENV:-/hpcwork/${USER}/smartsim/python/smartsim_gpu/bin/activate}"
+smart_env="${SMARTSIM_PYTHON_ENV:-/hpcwork/${USER}/smartsim/python/smartsim_cuda-12/bin/activate}"
 network_interface="${HYBRID_NETWORK_INTERFACE:-ib0}"
 run_dir="${project_folder}/scratch/hybrid_smartsim_${SLURM_JOB_ID}"
 
@@ -38,6 +38,7 @@ if [[ ! -f "${smart_env}" ]]; then
 fi
 source "${smart_env}"
 mkdir -p "${run_dir}/out"
+ln -s "${project_folder}/input" "${run_dir}/input"
 cp "${project_folder}/config_smartsim.toml" "${run_dir}/"
 cp "${project_folder}/input/properties_run_les_ref_medium.toml" "${run_dir}/properties.toml"
 sed -i "s/^timeSteps *=.*/timeSteps = ${run_steps}/" "${run_dir}/properties.toml"

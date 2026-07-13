@@ -26,13 +26,19 @@ build_suffix=""
 [[ "${build_variant}" == "scorep" ]] && build_suffix="_scorep"
 maia_build_dir="${MAIA_BUILD_DIR:-${project_folder}/maia/build_gnu_production_cmi${build_suffix}}"
 run_dir="${project_folder}/scratch/hybrid_phydll_${client_kind}_${SLURM_JOB_ID}"
+phydll_python_env="${PHYDLL_PYTHON_ENV:-/hpcwork/${USER}/smartsim/python/smartsim_cuda-12/bin/activate}"
 
 if [[ "${build_variant}" == "scorep" ]]; then
     export USE_SCOREP=1
     export SCOREP_METRIC_PAPI=""
 fi
 source "${project_folder}/setup_env_claix23.sh"
+if [[ "${client_kind}" == "python" ]]; then
+    [[ -f "${phydll_python_env}" ]] || { echo "PhyDLL Python environment not found: ${phydll_python_env}" >&2; exit 1; }
+    source "${phydll_python_env}"
+fi
 mkdir -p "${run_dir}/out"
+ln -s "${project_folder}/input" "${run_dir}/input"
 cp "${project_folder}/config_phydll.toml" "${run_dir}/"
 cp "${project_folder}/input/properties_run_les_ref_medium.toml" "${run_dir}/properties.toml"
 sed -i "s/^timeSteps *=.*/timeSteps = ${run_steps}/" "${run_dir}/properties.toml"
