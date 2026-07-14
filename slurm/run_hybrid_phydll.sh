@@ -54,8 +54,8 @@ export LD_LIBRARY_PATH="${project_folder}/CPP-ML-Interface/extern/phydll/build/l
 export MLCOUPLING_INTRA_OP_THREADS=24
 export MLCOUPLING_INTER_OP_THREADS=1
 export PHYDLL_DL_COUNT=1
-export OMPI_MCA_pmix=pmix3x
-export OMPI_MCA_ess=pmi
+export PHYDLL_DL_FIELD_COUNT=1
+export OMPI_MCA_pmix="^s1,s2"
 dl_client="${maia_build_dir}/CPP-ML-Interface/dl_clients/phydll_dl_client"
 [[ -x "${dl_client}" ]] || dl_client="${maia_build_dir}/bin/phydll_dl_client"
 [[ -x "${dl_client}" ]] || { echo "PhyDLL C++ client not found." >&2; exit 1; }
@@ -70,13 +70,13 @@ fi
 
 cd "${run_dir}"
 if [[ "${client_kind}" == "cpp" ]]; then
-    srun --label --mpi=pmix --het-group=0 --ntasks=24 --cpus-per-task=1 --cpu-bind=cores \
+    srun --label --mpi=pmix --export=ALL --preserve-env --het-group=0 --nodes=1 --ntasks=24 --cpus-per-task=1 --cpu-bind=cores \
         "${maia_build_dir}/bin/maia" ./properties.toml : \
-        --het-group=1 --ntasks=1 --cpus-per-task=24 --cpu-bind=cores \
+        --mpi=pmix --export=ALL --preserve-env --het-group=1 --nodes=1 --ntasks=1 --ntasks-per-node=1 --cpus-per-task=24 --cpu-bind=cores \
         "${dl_command}"
 else
-    srun --label --mpi=pmix --het-group=0 --ntasks=24 --cpus-per-task=1 --cpu-bind=cores \
+    srun --label --mpi=pmix --export=ALL --preserve-env --het-group=0 --nodes=1 --ntasks=24 --cpus-per-task=1 --cpu-bind=cores \
         "${maia_build_dir}/bin/maia" ./properties.toml : \
-        --het-group=1 --ntasks=1 --cpus-per-task=24 --cpu-bind=cores \
+        --mpi=pmix --export=ALL --preserve-env --het-group=1 --nodes=1 --ntasks=1 --ntasks-per-node=1 --cpus-per-task=24 --cpu-bind=cores \
         bash -c "source '${phydll_python_env}' && ${dl_command}"
 fi
