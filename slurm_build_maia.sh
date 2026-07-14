@@ -94,6 +94,7 @@ cmake "${CPP_ML_DIR}" \
     -DLIBTORCH_DIR="${CPP_ML_DIR}/extern/libtorch" \
     -DTORCH_VERSION=2.6.0 \
     -DBUILD_TESTS=OFF \
+    -DBUILD_TESTING=OFF \
     -DCMAKE_CXX_FLAGS:STRING="-DFLOW_DUMP_DEBUG" \
     -DCMAKE_BUILD_TYPE=Release
 
@@ -146,7 +147,8 @@ cmake . \
     -DAIX_SKIP_VENV_CREATION=ON \
     -DLIBTORCH_DIR="${CPP_ML_DIR}/extern/libtorch" \
     -DTORCH_VERSION=2.6.0 \
-    -DBUILD_TESTS=OFF
+    -DBUILD_TESTS=OFF \
+    -DBUILD_TESTING=OFF
 
 echo "=== Step 5: Building MAIA ==="
 cmake --build "${maia_build_dir}" -j"${NPROC}"
