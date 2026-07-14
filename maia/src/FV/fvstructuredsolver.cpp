@@ -340,7 +340,11 @@ FvStructuredSolver<nDim>::FvStructuredSolver(MInt solverId, StructuredGrid<nDim>
     overrides.dotted["provider.model_file"] = modelPath;
     overrides.dotted["provider.backend"] = std::string("TORCH");
     overrides.dotted["provider.device"] = cpp_ml_device;
-    overrides.dotted["provider.batch_size"] = static_cast<int64_t>(0);
+    if(cpp_ml_device == "GPU") {
+      overrides.dotted["provider.batch_size"] = static_cast<int64_t>(2048);
+    } else {
+      overrides.dotted["provider.batch_size"] = static_cast<int64_t>(0);
+    }
   } else {
     overrides.dotted["provider.app_comm"] = static_cast<void*>(&ml_comm);
     overrides.dotted["provider.model_file"] = modelPath;
