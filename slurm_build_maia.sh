@@ -53,6 +53,11 @@ echo "Sourcing MAIA environment from setup_env_claix23.sh..."
 cd "${REPO_DIR}"
 source ./setup_env_claix23.sh
 
+if [[ "${with_scorep}" == "ON" ]]; then
+    export CC=scorep-mpicc
+    export CXX=scorep-mpicxx
+fi
+
 # Ensure CMI extern submodules are initialized (AIxeleratorService, SmartRedis)
 echo "Initializing CMI submodules..."
 git -C "${CPP_ML_DIR}" submodule update --init --recursive || true
