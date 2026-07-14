@@ -63,13 +63,20 @@ dl_client="${maia_build_dir}/CPP-ML-Interface/dl_clients/phydll_dl_client"
 if [[ "${client_kind}" == "cpp" ]]; then
     dl_command="${dl_client}"
 elif [[ "${build_variant}" == "scorep" ]]; then
-    dl_command="source '${phydll_python_env}' && python3 -m scorep --keep-files --instrumenter-type=dummy --noinstrumenter --mpp=none ${project_folder}/CPP-ML-Interface/dl_clients/phydll_dl_client.py"
+    dl_command="python3 -m scorep --keep-files --instrumenter-type=dummy --noinstrumenter --mpp=none ${project_folder}/CPP-ML-Interface/dl_clients/phydll_dl_client.py"
 else
-    dl_command="source '${phydll_python_env}' && python3 ${project_folder}/CPP-ML-Interface/dl_clients/phydll_dl_client.py"
+    dl_command="python3 ${project_folder}/CPP-ML-Interface/dl_clients/phydll_dl_client.py"
 fi
 
 cd "${run_dir}"
-srun --label --mpi=pmix --het-group=0 --ntasks=24 --cpus-per-task=1 --cpu-bind=cores \
-    "${maia_build_dir}/bin/maia" ./properties.toml : \
-    --het-group=1 --ntasks=1 --cpus-per-task=24 --cpu-bind=cores \
-    bash -lc "${dl_command}"
+if [[ "${client_kind}" == "cpp" ]]; then
+    srun --label --mpi=pmix --het-group=0 --ntasks=24 --cpus-per-task=1 --cpu-bind=cores \
+        "${maia_build_dir}/bin/maia" ./properties.toml : \
+        --het-group=1 --ntasks=1 --cpus-per-task=24 --cpu-bind=cores \
+        "${dl_command}"
+else
+    srun --label --mpi=pmix --het-group=0 --ntasks=24 --cpus-per-task=1 --cpu-bind=cores \
+        "${maia_build_dir}/bin/maia" ./properties.toml : \
+        --het-group=1 --ntasks=1 --cpus-per-task=24 --cpu-bind=cores \
+        bash -c "source '${phydll_python_env}' && ${dl_command}"
+fi
