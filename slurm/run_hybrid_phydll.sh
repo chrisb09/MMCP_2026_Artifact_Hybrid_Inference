@@ -63,9 +63,9 @@ dl_client="${maia_build_dir}/CPP-ML-Interface/dl_clients/phydll_dl_client"
 if [[ "${client_kind}" == "cpp" ]]; then
     dl_command="${dl_client}"
 elif [[ "${build_variant}" == "scorep" ]]; then
-    dl_command="python3 -m scorep --keep-files --instrumenter-type=dummy --noinstrumenter --mpp=none ${project_folder}/CPP-ML-Interface/dl_clients/phydll_dl_client.py"
+    dl_command="source '${phydll_python_env}' && python3 -m scorep --keep-files --instrumenter-type=dummy --noinstrumenter --mpp=none ${project_folder}/CPP-ML-Interface/dl_clients/phydll_dl_client.py"
 else
-    dl_command="python3 ${project_folder}/CPP-ML-Interface/dl_clients/phydll_dl_client.py"
+    dl_command="source '${phydll_python_env}' && python3 ${project_folder}/CPP-ML-Interface/dl_clients/phydll_dl_client.py"
 fi
 
 cd "${run_dir}"

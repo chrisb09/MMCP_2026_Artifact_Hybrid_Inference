@@ -48,6 +48,7 @@ ln -s "${project_folder}/input/restart_les_init_medium.hdf5" "${run_dir}/out/res
 
 export CPP_ML_INTERFACE_PROVIDER_ENV=SMARTSIM
 export CPP_ML_INTERFACE_DEVICE=GPU
+export MLCOUPLING_SMARTSIM_NUM_GPUS=1
 export FLOW_DEBUG_DUMP_DIR="${run_dir}/dumps"
 export MAIA_SNAPSHOT_DIR="${run_dir}/snapshots"
 export SR_CMD_TIMEOUT=600
