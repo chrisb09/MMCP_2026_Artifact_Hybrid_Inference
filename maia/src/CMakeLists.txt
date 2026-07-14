@@ -239,6 +239,11 @@ add_executable(${BIN_TARGET} $<TARGET_OBJECTS:${OBJ_LIB_TARGET}> ${SRC_DIR_ABS}/
 set_target_properties(${BIN_TARGET} PROPERTIES OUTPUT_NAME ${BIN_NAME})
 target_link_libraries(${BIN_TARGET} ${LIBRARIES})
 
+if(WITH_SCOREP)
+  set_target_properties(${OBJ_LIB_TARGET} PROPERTIES SCOREP_MPP_SYSTEM "mpi")
+  set_target_properties(${BIN_TARGET} PROPERTIES SCOREP_MPP_SYSTEM "mpi")
+endif()
+
 # If desired, create library target and link executable to it
 if(CREATE_LIB)
   # Create library target
