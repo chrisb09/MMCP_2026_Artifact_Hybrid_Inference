@@ -4,11 +4,14 @@
 #SBATCH --job-name=maia-hybrid-smartsim
 #SBATCH --output=logs/hybrid_smartsim_%j.out
 #SBATCH --error=logs/hybrid_smartsim_%j.err
-#SBATCH --partition=c23mm
+# Group 0: solver (24 ranks, c23g node — GPU present but not used by solver)
+#SBATCH --partition=c23g
 #SBATCH --nodes=1
 #SBATCH --ntasks=24
 #SBATCH --cpus-per-task=1
+#SBATCH --gres=gpu:1
 #SBATCH hetjob
+# Group 1: SmartSim controller + GPU
 #SBATCH --partition=c23g
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
@@ -32,11 +35,13 @@ if [[ "${build_variant}" == "scorep" ]]; then
     export SCOREP_METRIC_PAPI=""
 fi
 source "${project_folder}/setup_env_claix23.sh"
+
 if [[ ! -f "${smart_env}" ]]; then
     echo "SmartSim Python environment not found: ${smart_env}" >&2
     exit 1
 fi
 source "${smart_env}"
+
 mkdir -p "${run_dir}/out"
 ln -s "${project_folder}/input" "${run_dir}/input"
 cp "${project_folder}/config_smartsim.toml" "${run_dir}/"
@@ -49,21 +54,66 @@ ln -s "${project_folder}/input/restart_les_init_medium.hdf5" "${run_dir}/out/res
 export CPP_ML_INTERFACE_PROVIDER_ENV=SMARTSIM
 export CPP_ML_INTERFACE_DEVICE=GPU
 export MLCOUPLING_SMARTSIM_NUM_GPUS=1
-export FLOW_DEBUG_DUMP_DIR="${run_dir}/dumps"
-export MAIA_SNAPSHOT_DIR="${run_dir}/snapshots"
+if [[ "${MLCOUPLING_DEBUG_EXPORT:-0}" == "1" ]]; then
+    debug_export_dir="${MLCOUPLING_DEBUG_EXPORT_DIR:-${run_dir}/debug}"
+    mkdir -p "${debug_export_dir}"
+    export FLOW_DEBUG_DUMP_DIR="${debug_export_dir}/cmi"
+    export MAIA_SNAPSHOT_DIR="${debug_export_dir}/snapshots"
+else
+    unset FLOW_DEBUG_DUMP_DIR
+    unset MAIA_SNAPSHOT_DIR
+fi
 export SR_CMD_TIMEOUT=600
 export SR_SOCKET_TIMEOUT=600000
 export SR_MODEL_TIMEOUT=600000
+
+persist_snapshots() {
+    local status=$?
+    [[ -n "${MAIA_SNAPSHOT_DIR:-}" ]] || return "${status}"
+    local snapshot_tmp="/tmp/maia_snapshots_${SLURM_JOB_ID}.h5"
+    local snapshot_dest="${MAIA_SNAPSHOT_DIR}/snapshots_${SLURM_JOB_ID}.h5"
+
+    if [[ -s "${snapshot_tmp}" ]]; then
+        mkdir -p "${MAIA_SNAPSHOT_DIR}"
+        cp -f "${snapshot_tmp}" "${snapshot_dest}"
+        echo "Snapshot copy complete: ${snapshot_dest} ($(stat --printf='%s bytes' "${snapshot_dest}"))"
+        if command -v h5ls >/dev/null; then
+            echo "Snapshot contents:"
+            h5ls -r "${snapshot_dest}"
+        fi
+    else
+        echo "WARNING: snapshot file was not found or empty: ${snapshot_tmp}" >&2
+    fi
+    return "${status}"
+}
+
+if [[ "${build_variant}" == "scorep" ]]; then
+    export SCOREP_ENABLE_TRACING=false
+    export SCOREP_ENABLE_PROFILING=true
+    export SCOREP_MPI_ENABLE_GROUPS="NONE"
+    export SCOREP_EXPERIMENT_DIRECTORY="${run_dir}/scorep-results"
+    mkdir -p "${SCOREP_EXPERIMENT_DIRECTORY}"
+fi
+
 cleanup() {
+    local status=$?
     touch "${run_dir}/.solver_done"
     [[ -z "${controller_pid:-}" ]] || wait "${controller_pid}" || true
+    persist_snapshots
+    return "${status}"
 }
 trap cleanup EXIT
 
+# Start the SmartSim controller on het-group 1 (GPU node) in the background.
 srun --het-group=1 --ntasks=1 --cpus-per-task=24 --cpu-bind=cores \
-    bash -lc "cd '${run_dir}' && python3 '${project_folder}/CPP-ML-Interface/dl_clients/smartsim_controller.py' --launcher local --interface '${network_interface}' --use-gpu --db-nodes 1 --intra-op-threads 8 --threads-per-queue 1 --port 6780 --endpoint-file .ssdb_endpoint --done-file .solver_done --exp-dir ./ssdb_exp" &
+    bash -lc "cd '${run_dir}' && python3 '${project_folder}/CPP-ML-Interface/dl_clients/smartsim_controller.py' \
+        --launcher local --interface '${network_interface}' --use-gpu \
+        --db-nodes 1 --intra-op-threads 8 --threads-per-queue 1 \
+        --port 6780 --endpoint-file .ssdb_endpoint --done-file .solver_done \
+        --exp-dir ./ssdb_exp" &
 controller_pid=$!
 
+# Wait for the controller to publish its endpoint.
 for _ in {1..120}; do
     [[ -s "${run_dir}/.ssdb_endpoint" ]] && break
     sleep 1
@@ -72,5 +122,14 @@ done
 export SSDB="$(<"${run_dir}/.ssdb_endpoint")"
 
 cd "${run_dir}"
-srun --label --mpi=pmix --het-group=0 --ntasks=24 --cpus-per-task=1 --cpu-bind=cores \
-    "${maia_build_dir}/bin/maia" ./properties.toml
+
+# Launch solver ranks on het-group 0.
+if [[ "${build_variant}" == "scorep" ]]; then
+    srun --label --mpi=pmix \
+        --het-group=0 --ntasks=24 --cpus-per-task=1 --cpu-bind=cores \
+            "${maia_build_dir}/bin/maia" ./properties.toml
+else
+    srun --label --mpi=pmix \
+        --het-group=0 --ntasks=24 --cpus-per-task=1 --cpu-bind=cores \
+            "${maia_build_dir}/bin/maia" ./properties.toml
+fi

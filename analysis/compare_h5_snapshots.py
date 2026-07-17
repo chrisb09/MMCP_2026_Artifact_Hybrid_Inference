@@ -22,6 +22,33 @@ def sort_key(step_type):
     ts, tp = step_type
     return (ts, 0 if tp == 'sent' else 1)
 
+
+def aligned_field_values(ref_grp, new_grp, field):
+    """Return flattened field values over the common global cell extent."""
+    ref_val = np.array(ref_grp[field])
+    new_val = np.array(new_grp[field])
+
+    if ref_val.ndim != new_val.ndim:
+        raise ValueError(f"Field rank mismatch: {ref_val.shape} vs {new_val.shape}")
+
+    ref_offset = np.array(ref_grp["nOffsetCells"] if "nOffsetCells" in ref_grp else np.zeros(ref_val.ndim), dtype=int)
+    new_offset = np.array(new_grp["nOffsetCells"] if "nOffsetCells" in new_grp else np.zeros(new_val.ndim), dtype=int)
+    ref_shape = np.array(ref_val.shape, dtype=int)
+    new_shape = np.array(new_val.shape, dtype=int)
+    start = np.maximum(ref_offset, new_offset)
+    stop = np.minimum(ref_offset + ref_shape, new_offset + new_shape)
+
+    if np.any(stop <= start):
+        raise ValueError(
+            f"No overlapping cells for {field}: ref offset/shape {ref_offset}/{ref_shape}, "
+            f"new offset/shape {new_offset}/{new_shape}"
+        )
+
+    ref_slices = tuple(slice(start[i] - ref_offset[i], stop[i] - ref_offset[i]) for i in range(ref_val.ndim))
+    new_slices = tuple(slice(start[i] - new_offset[i], stop[i] - new_offset[i]) for i in range(new_val.ndim))
+    return ref_val[ref_slices].flatten(), new_val[new_slices].flatten(), tuple(stop - start)
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--ref', required=True, help='Path to reference HDF5')
@@ -70,11 +97,10 @@ def main():
                 ref_grp = f_ref[ref_index[(ts, tp)]]
                 new_grp = f_new[new_index[(ts, tp)]]
 
-                ref_val = np.array(ref_grp[args.field])
-                new_val = np.array(new_grp[args.field])
-                
-                ref_val = ref_val.flatten()
-                new_val = new_val.flatten()
+                ref_val, new_val, overlap_shape = aligned_field_values(ref_grp, new_grp, args.field)
+                if tuple(ref_grp[args.field].shape) != tuple(new_grp[args.field].shape):
+                    print(f"Step {ts} {tp}: comparing common global extent {overlap_shape} "
+                          f"from ref {tuple(ref_grp[args.field].shape)} and new {tuple(new_grp[args.field].shape)}")
 
                 diff = np.abs(ref_val - new_val)
                 min_d = np.min(diff)
@@ -116,8 +142,10 @@ def main():
         with h5py.File(args.ref, 'r') as f_ref, h5py.File(args.new, 'r') as f_new:
             for (ts, tp) in common_keys:
                 x_vals.append(ts + (0.1 if tp == 'received' else 0.0))
-                ref_val = np.array(f_ref[ref_index[(ts, tp)]][args.field]).flatten()[target_idx]
-                new_val = np.array(f_new[new_index[(ts, tp)]][args.field]).flatten()[target_idx]
+                ref_val, new_val, _ = aligned_field_values(
+                    f_ref[ref_index[(ts, tp)]], f_new[new_index[(ts, tp)]], args.field)
+                ref_val = ref_val[target_idx]
+                new_val = new_val[target_idx]
                 ref_trace.append(ref_val)
                 new_trace.append(new_val)
                 diff_trace.append(np.abs(ref_val - new_val))

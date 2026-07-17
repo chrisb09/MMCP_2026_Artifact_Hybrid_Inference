@@ -240,8 +240,10 @@ set_target_properties(${BIN_TARGET} PROPERTIES OUTPUT_NAME ${BIN_NAME})
 target_link_libraries(${BIN_TARGET} ${LIBRARIES})
 
 if(WITH_SCOREP)
-  set_target_properties(${OBJ_LIB_TARGET} PROPERTIES SCOREP_MPP_SYSTEM "mpi")
-  set_target_properties(${BIN_TARGET} PROPERTIES SCOREP_MPP_SYSTEM "mpi")
+  # No SCOREP_MPP_SYSTEM property set: we use user-region instrumentation only
+  # (--mpp=none, --nocompiler). Setting SCOREP_MPP_SYSTEM "mpi" would force the
+  # MPI adapter + OPARI2 OpenMP preprocessing, which breaks on MAIA's sources
+  # and causes MPI_Comm_group()-before-MPI_Init crashes at runtime.
 endif()
 
 # If desired, create library target and link executable to it

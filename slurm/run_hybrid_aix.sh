@@ -4,11 +4,14 @@
 #SBATCH --job-name=maia-hybrid-aix
 #SBATCH --output=logs/hybrid_aix_%j.out
 #SBATCH --error=logs/hybrid_aix_%j.err
-#SBATCH --partition=c23mm
+# Group 0: solver (24 ranks, c23g node — GPU present but not used by solver)
+#SBATCH --partition=c23g
 #SBATCH --nodes=1
 #SBATCH --ntasks=24
 #SBATCH --cpus-per-task=1
+#SBATCH --gres=gpu:1
 #SBATCH hetjob
+# Group 1: ML/GPU side (1 task, 24 cores, GPU used)
 #SBATCH --partition=c23g
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
@@ -30,20 +33,75 @@ if [[ "${build_variant}" == "scorep" ]]; then
     export SCOREP_METRIC_PAPI=""
 fi
 source "${project_folder}/setup_env_claix23.sh"
+
 mkdir -p "${run_dir}/out"
 ln -s "${project_folder}/input" "${run_dir}/input"
 cp "${project_folder}/config_aix.toml" "${run_dir}/"
 cp "${project_folder}/input/properties_run_les_ref_medium.toml" "${run_dir}/properties.toml"
 sed -i "s/^timeSteps *=.*/timeSteps = ${run_steps}/" "${run_dir}/properties.toml"
+# Match the reference schedule: collect five consecutive CFD states, infer on
+# the fifth one, then advance by 12 * 2 = 24 solver steps.
+sed -i 's/^mlInterval *=.*/mlInterval = 5/' "${run_dir}/properties.toml"
+sed -i 's/^mlInputLength *=.*/mlInputLength = 5/' "${run_dir}/properties.toml"
+sed -i 's/^mlStepCoefficient *=.*/mlStepCoefficient = 12/' "${run_dir}/properties.toml"
+sed -i 's/^mlForecastWindow *=.*/mlForecastWindow = 2/' "${run_dir}/properties.toml"
+sed -i 's/^mlInputStepDistance *=.*/mlInputStepDistance = 1/' "${run_dir}/properties.toml"
 sed -i 's/^hostFraction *=.*/hostFraction = "0.96"/' "${run_dir}/properties.toml"
 ln -s "${project_folder}/input/grid_les_medium.hdf5" "${run_dir}/grid_les_medium.hdf5"
 ln -s "${project_folder}/input/restart_les_init_medium.hdf5" "${run_dir}/out/restart_les_ref_medium.hdf5"
 
 export CPP_ML_INTERFACE_PROVIDER_ENV=AIX
-export FLOW_DEBUG_DUMP_DIR="${run_dir}/dumps"
-export MAIA_SNAPSHOT_DIR="${run_dir}/snapshots"
+if [[ "${MLCOUPLING_DEBUG_EXPORT:-0}" == "1" ]]; then
+    debug_export_dir="${MLCOUPLING_DEBUG_EXPORT_DIR:-${run_dir}/debug}"
+    mkdir -p "${debug_export_dir}"
+    export FLOW_DEBUG_DUMP_DIR="${debug_export_dir}/cmi"
+    export MAIA_SNAPSHOT_DIR="${debug_export_dir}/snapshots"
+else
+    unset FLOW_DEBUG_DUMP_DIR
+    unset MAIA_SNAPSHOT_DIR
+fi
+
+persist_snapshots() {
+    local status=$?
+    [[ -n "${MAIA_SNAPSHOT_DIR:-}" ]] || return "${status}"
+    local snapshot_tmp="/tmp/maia_snapshots_${SLURM_JOB_ID}.h5"
+    local snapshot_dest="${MAIA_SNAPSHOT_DIR}/snapshots_${SLURM_JOB_ID}.h5"
+
+    if [[ -s "${snapshot_tmp}" ]]; then
+        mkdir -p "${MAIA_SNAPSHOT_DIR}"
+        cp -f "${snapshot_tmp}" "${snapshot_dest}"
+        echo "Snapshot copy complete: ${snapshot_dest} ($(stat --printf='%s bytes' "${snapshot_dest}"))"
+        if command -v h5ls >/dev/null; then
+            echo "Snapshot contents:"
+            h5ls -r "${snapshot_dest}"
+        fi
+    else
+        echo "WARNING: snapshot file was not found or empty: ${snapshot_tmp}" >&2
+    fi
+    return "${status}"
+}
+trap persist_snapshots EXIT
+
+if [[ "${build_variant}" == "scorep" ]]; then
+    export SCOREP_ENABLE_TRACING=false
+    export SCOREP_ENABLE_PROFILING=true
+    unset SCOREP_MPI_ENABLE_GROUPS
+    export SCOREP_EXPERIMENT_DIRECTORY="${run_dir}/scorep-results"
+    mkdir -p "${SCOREP_EXPERIMENT_DIRECTORY}"
+fi
+
 cd "${run_dir}"
-srun --label --mpi=pmix --het-group=0 --ntasks=24 --cpus-per-task=1 --cpu-bind=cores \
-    "${maia_build_dir}/bin/maia" ./properties.toml : \
-    --het-group=1 --ntasks=1 --cpus-per-task=24 --cpu-bind=cores \
-    "${maia_build_dir}/bin/maia" ./properties.toml
+
+if [[ "${build_variant}" == "scorep" ]]; then
+    srun --label --mpi=pmix \
+        --het-group=0 --ntasks=24 --cpus-per-task=1 --cpu-bind=cores \
+            "${maia_build_dir}/bin/maia" ./properties.toml : \
+        --het-group=1 --ntasks=1 --cpus-per-task=24 --cpu-bind=cores \
+            "${maia_build_dir}/bin/maia" ./properties.toml
+else
+    srun --label --mpi=pmix \
+        --het-group=0 --ntasks=24 --cpus-per-task=1 --cpu-bind=cores \
+            "${maia_build_dir}/bin/maia" ./properties.toml : \
+        --het-group=1 --ntasks=1 --cpus-per-task=24 --cpu-bind=cores \
+            "${maia_build_dir}/bin/maia" ./properties.toml
+fi

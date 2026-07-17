@@ -1075,12 +1075,13 @@ class CMakeConfigure:
         # Generate instrumentation argument
         if self.enable_instrumentation:
             if self.enable_instrumentation == 'scorep':
-                flags = {'mpi': '--mpp=mpi --thread=none', 'user': '--user',
+                flags = {'mpi': '--mpp=mpi', 'user': '--user',
                          'compiler': '--compiler'}
                 instrumentation = 'scorep '
                 if 'compiler' not in self.instrument:
                     instrumentation += "--nocompiler "
                 instrumentation += "--nocuda " #Otherwise doesnt work on nodes without GPUs like claix cpu
+                instrumentation += "--thread=none "
                 for f in self.instrument:
                     instrumentation += "{flag} ".format(flag=flags[f])
                     instrumentation_define = ''

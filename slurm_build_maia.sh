@@ -54,8 +54,10 @@ cd "${REPO_DIR}"
 source ./setup_env_claix23.sh
 
 if [[ "${with_scorep}" == "ON" ]]; then
-    export CC=scorep-mpicc
-    export CXX=scorep-mpicxx
+    # Do not set CC=scorep-mpicc / CXX=scorep-mpicxx globally here.
+    # We want configure.py's CXX wrapper definition to control instrumentation
+    # to control the instrumentation scope, while using the plain mpicxx compiler for C.
+    :
 fi
 
 # Ensure CMI extern submodules are initialized (AIxeleratorService, SmartRedis)
@@ -128,18 +130,49 @@ elif [ -e build_gnu_production ]; then
 fi
 
 echo "=== Step 4: Configuring MAIA ==="
-export SCOREP_WRAPPER_INSTRUMENTER_FLAGS="--verbose=1 --nocompiler --user --mpp=mpi --io=none --memory=none --thread=none --nocuda"
 export SCOREP_ENABLE_CUDA=0
 
-./configure.py 1 2 \
-    --disable-updateGitSubmodules \
-    --build-dir-name "${maia_build_dir}"
+if [[ "${with_scorep}" == "ON" ]]; then
+    # User regions plus MPI communication instrumentation. Disable compiler,
+    # OpenMP, and CUDA adapters to avoid OPARI2 preprocessing and CUDA loader
+    # dependencies while retaining MPI communication events in profile.cubex.
+    export SCOREP_WRAPPER_INSTRUMENTER_FLAGS="--verbose=1 --nocompiler --user --mpp=mpi --thread=none --nocuda"
+    # Export Score-P CMake default system properties as env vars so that
+    # FindScorep.cmake (via INITIALIZE_FROM_VARIABLE) picks them up during
+    # configure.py's cmake invocation — before our second cmake . override runs.
+    export SCOREP_MPP_SYSTEM=mpi
+    export SCOREP_THREADING_SYSTEM=none
+    export SCOREP_ENABLE_COMPILER=OFF
+    export SCOREP_ENABLE_USER=ON
+    ./configure.py 1 2 \
+        --disable-updateGitSubmodules \
+        --build-dir-name "${maia_build_dir}" \
+        --enable-instrumentation scorep \
+        --instrument mpi \
+        --instrument user
+else
+    ./configure.py 1 2 \
+        --disable-updateGitSubmodules \
+        --build-dir-name "${maia_build_dir}"
+fi
 
 # Append -Wno-array-bounds to suppress GCC 13.2 false positive in existing MAIA code.
 # This must come AFTER configure.py because MAIA's GNU.cmake sets -Warray-bounds=2
 # which would re-enable the warning if -Wno-array-bounds came first via CXXFLAGS.
 cd "${maia_build_dir}"
 CURRENT_FLAGS=$(cmake -LA . 2>/dev/null | grep "^CMAKE_CXX_FLAGS:STRING=" | sed 's/^CMAKE_CXX_FLAGS:STRING=//')
+cmake_extra_scorep_args=()
+if [[ "${with_scorep}" == "ON" ]]; then
+    # Enable Score-P's MPI adapter and user regions, but no OpenMP OPARI2
+    # preprocessing (--thread=none). These cached settings must match the wrapper.
+    # These are cached variables set by FindScorep.cmake that persist across builds.
+    cmake_extra_scorep_args=(
+        -DSCOREP_MPP_SYSTEM:STRING=mpi
+        -DSCOREP_THREADING_SYSTEM:STRING=none
+        -DSCOREP_ENABLE_COMPILER:BOOL=OFF
+        -DSCOREP_ENABLE_USER:BOOL=ON
+    )
+fi
 cmake . \
     -DCMAKE_CXX_FLAGS:STRING="${CURRENT_FLAGS} -Wno-array-bounds -DFLOW_DUMP_DEBUG" \
     -DWITH_SCOREP="${with_scorep}" \
@@ -148,7 +181,8 @@ cmake . \
     -DLIBTORCH_DIR="${CPP_ML_DIR}/extern/libtorch" \
     -DTORCH_VERSION=2.6.0 \
     -DBUILD_TESTS=OFF \
-    -DBUILD_TESTING=OFF
+    -DBUILD_TESTING=OFF \
+    "${cmake_extra_scorep_args[@]}"
 
 echo "=== Step 5: Building MAIA ==="
 cmake --build "${maia_build_dir}" -j"${NPROC}"
