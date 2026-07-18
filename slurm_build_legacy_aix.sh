@@ -12,6 +12,7 @@ set -euo pipefail
 
 project_folder="${SLURM_SUBMIT_DIR:-$(pwd)}"
 source "${project_folder}/setup_env_claix23.sh"
+export CXXFLAGS="${CXXFLAGS:-} -DOUTPUT_FIELDS"
 
 # Reuse the artifact's CUDA 12.4 LibTorch instead of downloading one.
 legacy_libtorch="${project_folder}/CPP-ML-Interface/extern/libtorch"
