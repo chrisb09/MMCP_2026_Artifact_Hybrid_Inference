@@ -21,10 +21,35 @@ fi
 
 mkdir -p "${project_folder}/logs"
 
-(
-    cd "${project_folder}/CPP-ML-Interface"
-    ./install-scorep.sh
-)
+cpp_ml_root="${project_folder}/CPP-ML-Interface"
+scorep_flags="--nocompiler --user --mpp=mpi --thread=none --nocuda"
+
+# The historical installer builds a Python 3.11 mpi4py environment although
+# this AIX-only diagnosis uses no Python API. Build only the C++ dependencies.
+make -C "${cpp_ml_root}/extern/phydll" \
+    BUILD="${cpp_ml_root}/extern/phydll/BUILD-SCOREP" ENABLE_PYTHON=OFF
+
+cmake -S "${cpp_ml_root}/extern/HighFive" -B "${cpp_ml_root}/extern/HighFive/BUILD" \
+    -DHIGHFIVE_UNIT_TESTS=OFF \
+    -DCMAKE_INSTALL_PREFIX="${cpp_ml_root}/extern/HighFive/BUILD/INSTALL"
+cmake --build "${cpp_ml_root}/extern/HighFive/BUILD" -j"${SLURM_CPUS_ON_NODE:-96}"
+cmake --install "${cpp_ml_root}/extern/HighFive/BUILD"
+
+SCOREP_WRAPPER_INSTRUMENTER_FLAGS="${scorep_flags}" \
+cmake -S "${cpp_ml_root}/extern/aixeleratorservice" -B "${cpp_ml_root}/extern/aixeleratorservice/BUILD-SCOREP" \
+    -DWITH_TORCH=ON -DTORCH_VERSION=2.6.0 \
+    -DCMAKE_C_COMPILER=scorep-mpicc -DCMAKE_CXX_COMPILER=scorep-mpicxx \
+    -DCMAKE_INSTALL_PREFIX="${cpp_ml_root}/extern/aixeleratorservice/INSTALL-SCOREP"
+cmake --build "${cpp_ml_root}/extern/aixeleratorservice/BUILD-SCOREP" -j"${SLURM_CPUS_ON_NODE:-96}"
+cmake --install "${cpp_ml_root}/extern/aixeleratorservice/BUILD-SCOREP"
+
+SCOREP_WRAPPER_INSTRUMENTER_FLAGS="${scorep_flags}" \
+cmake -S "${cpp_ml_root}" -B "${cpp_ml_root}/BUILD-SCOREP" \
+    -DWITH_PHYDLL=OFF -DWITH_AIX=ON -DWITH_REFERENCE_MODEL=ON -DWITH_SCOREP=ON \
+    -DCMAKE_C_COMPILER=scorep-mpicc -DCMAKE_CXX_COMPILER=scorep-mpicxx \
+    -DCMAKE_INSTALL_PREFIX="${cpp_ml_root}/BUILD-SCOREP"
+cmake --build "${cpp_ml_root}/BUILD-SCOREP" -j"${SLURM_CPUS_ON_NODE:-96}"
+cmake --install "${cpp_ml_root}/BUILD-SCOREP"
 
 (
     cd "${project_folder}/maia"
