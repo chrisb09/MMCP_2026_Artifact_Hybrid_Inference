@@ -37,7 +37,8 @@ export MLCOUPLING_DEBUG_EXPORT=1
 export MLCOUPLING_DEBUG_EXPORT_DIR="${run_dir}/debug"
 export MLCOUPLING_DEBUG_RANK=0
 export MLCOUPLING_DEBUG_MAX_INFERENCES=1
-export LD_LIBRARY_PATH="${project_folder}/CPP-ML-Interface/BUILD-SCOREP/lib:${project_folder}/CPP-ML-Interface/extern/aixeleratorservice/INSTALL-SCOREP/lib:${project_folder}/CPP-ML-Interface/extern/phydll/BUILD-SCOREP/lib:${LD_LIBRARY_PATH:-}"
+cuda_lib="/cvmfs/software.hpc.rwth.de/Linux/RH9/x86_64/intel/sapphirerapids/software/CUDA/12.4.0/lib"
+export LD_LIBRARY_PATH="${cuda_lib}:${project_folder}/CPP-ML-Interface/BUILD-SCOREP/lib:${project_folder}/CPP-ML-Interface/extern/aixeleratorservice/INSTALL-SCOREP/lib:${project_folder}/CPP-ML-Interface/extern/phydll/BUILD-SCOREP/lib:${LD_LIBRARY_PATH:-}"
 export SCOREP_ENABLE_TRACING=false
 export SCOREP_ENABLE_PROFILING=true
 
