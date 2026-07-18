@@ -55,5 +55,5 @@ cmake --install "${cpp_ml_root}/BUILD-SCOREP"
 (
     cd "${project_folder}/maia"
     ./configure.py 1 2 --enable-instrumentation scorep --instrument mpi --instrument user
-    cmake --build build_gnu_production -j"${SLURM_CPUS_ON_NODE:-96}"
+    cmake --build build_gnu_production --clean-first -j"${SLURM_CPUS_ON_NODE:-96}"
 )
