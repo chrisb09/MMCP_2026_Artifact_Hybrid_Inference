@@ -12,6 +12,7 @@
 set -euo pipefail
 
 project_folder="${SLURM_SUBMIT_DIR:-$(pwd)}"
+artifact_input="${ARTIFACT_INPUT_DIR:-/rwthfs/rz/cluster/hpcwork/ro092286/MMCP_2026_Artifact_Hybrid_Inference/input}"
 run_steps="${RUN_STEPS:-20}"
 run_dir="${project_folder}/scratch/legacy_aix_cpu_${SLURM_JOB_ID}"
 maia_bin="${project_folder}/maia/build_gnu_production/bin/maia"
@@ -20,8 +21,8 @@ source "${project_folder}/setup_env_claix23.sh"
 [[ -x "${maia_bin}" ]] || { echo "Legacy MAIA binary not found: ${maia_bin}" >&2; exit 1; }
 
 mkdir -p "${run_dir}/out" "${run_dir}/debug"
-ln -s "${project_folder}/input" "${run_dir}/input"
-cp "${project_folder}/input/properties_run_les_ref_medium.toml" "${run_dir}/properties.toml"
+ln -s "${artifact_input}" "${run_dir}/input"
+cp "${artifact_input}/properties_run_les_ref_medium.toml" "${run_dir}/properties.toml"
 sed -i "s/^timeSteps *=.*/timeSteps = ${run_steps}/" "${run_dir}/properties.toml"
 sed -i 's/^mlInterval *=.*/mlInterval = 5/' "${run_dir}/properties.toml"
 sed -i 's/^mlInputLength *=.*/mlInputLength = 5/' "${run_dir}/properties.toml"
@@ -29,8 +30,8 @@ sed -i 's/^mlStepCoefficient *=.*/mlStepCoefficient = 12/' "${run_dir}/propertie
 sed -i 's/^mlForecastWindow *=.*/mlForecastWindow = 2/' "${run_dir}/properties.toml"
 sed -i 's/^mlInputStepDistance *=.*/mlInputStepDistance = 1/' "${run_dir}/properties.toml"
 sed -i 's/^hostFraction *=.*/hostFraction = "1.00"/' "${run_dir}/properties.toml"
-ln -s "${project_folder}/input/grid_les_medium.hdf5" "${run_dir}/grid_les_medium.hdf5"
-ln -s "${project_folder}/input/restart_les_init_medium.hdf5" "${run_dir}/out/restart_les_ref_medium.hdf5"
+ln -s "${artifact_input}/grid_les_medium.hdf5" "${run_dir}/grid_les_medium.hdf5"
+ln -s "${artifact_input}/restart_les_init_medium.hdf5" "${run_dir}/out/restart_les_ref_medium.hdf5"
 
 export MLCOUPLING_DEBUG_EXPORT=1
 export MLCOUPLING_DEBUG_EXPORT_DIR="${run_dir}/debug"
