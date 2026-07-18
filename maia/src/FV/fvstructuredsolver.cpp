@@ -8439,12 +8439,12 @@ MBool FvStructuredSolver<nDim>::solutionStep() {
   MBool isCouplingStep = m_mlCoupler->isCouplingStep(logicalTimeStep);
   MBool isInferenceStep = m_mlCoupler->isInferenceStep(logicalTimeStep);
 
-  #ifdef OUTPUT_FIELDS    
+  const char* debug_export_dir = std::getenv("MLCOUPLING_DEBUG_EXPORT_DIR");
+  const bool export_fields = debug_export_dir && std::getenv("MLCOUPLING_DEBUG_ALL_RANKS");
   std::vector<MInt> nCells;
   std::vector<MInt> nOffsetCells;
   MInt myRank;
   std::string output_file_name;
-  #endif
 
   //only apply the fields predicted by the ml and received by PhyDLL every N timesteps
   if(m_RKStep == 0 && (isInferenceStep || isCouplingStep)){
@@ -8461,7 +8461,7 @@ MBool FvStructuredSolver<nDim>::solutionStep() {
         m_mlCoupler->inference(isInferenceStep);
     #endif
     #if defined(WITH_PHYDLL) || defined(WITH_AIXSERVICE) || defined(WITH_REFERENCE_MODEL)
-      #ifdef OUTPUT_FIELDS    
+      if (export_fields) {
         nCells.push_back(m_nCells[0]);
         nCells.push_back(m_nCells[1]);
         nCells.push_back(m_nCells[2]);
@@ -8471,9 +8471,9 @@ MBool FvStructuredSolver<nDim>::solutionStep() {
         nOffsetCells.push_back(m_nOffsetCells[2]);
         
         myRank = globalDomainId();
-        output_file_name = "sent_fields" + std::to_string(myRank) + "-t" + std::to_string(globalTimeStep) + ".h5";
+        output_file_name = std::string(debug_export_dir) + "/sent_rank_" + std::to_string(myRank) + "_t" + std::to_string(globalTimeStep) + ".h5";
         m_mlCoupler->writeUVWFieldsToH5(m_cells->pvariables[PV->U], m_cells->pvariables[PV->V], m_cells->pvariables[PV->W], nCells, nOffsetCells, output_file_name);
-      #endif
+      }
 
       //Checks steptype via internal iteration counter
       m_mlCoupler->ml_step();
@@ -8490,7 +8490,7 @@ MBool FvStructuredSolver<nDim>::solutionStep() {
       RECORD_TIMER_START(m_timers[Timers::Inference]);
       std::cout << "m-AIA: globalTimeStep = " << globalTimeStep << " (logical " << logicalTimeStep << ") is an inference step!" << "\n";
       
-      #ifdef OUTPUT_FIELDS  
+      if (export_fields) {
         nCells.clear();        
         nCells.push_back(m_nCells[0]);
         nCells.push_back(m_nCells[1]);
@@ -8502,10 +8502,10 @@ MBool FvStructuredSolver<nDim>::solutionStep() {
         nOffsetCells.push_back(m_nOffsetCells[2]);
         
         myRank = globalDomainId();
-        output_file_name = "received_fields_" + std::to_string(myRank) + "-t" + std::to_string(globalTimeStep) + ".h5";
+        output_file_name = std::string(debug_export_dir) + "/received_rank_" + std::to_string(myRank) + "_t" + std::to_string(globalTimeStep) + ".h5";
         
         m_mlCoupler->writeUVWFieldsToH5(m_cells->pvariables[PV->U], m_cells->pvariables[PV->V], m_cells->pvariables[PV->W], nCells, nOffsetCells, output_file_name);
-      #endif
+      }
 
       MInt inferenceIncrement = m_mlCoupler->getInferenceIncrement();
       // taken from rungeKuttaStep() form 3D structured solver
