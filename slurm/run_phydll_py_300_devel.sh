@@ -31,6 +31,8 @@ cd "${project_folder}"
 mkdir -p logs out auxdata "debug_dumps/${snapshot_suffix}"
 
 source "${project_folder}/setup_env_claix23.sh"
+cuda_stubs="/cvmfs/software.hpc.rwth.de/Linux/RH9/x86_64/intel/sapphirerapids/software/CUDA/12.4.0/targets/x86_64-linux/lib/stubs"
+export LD_LIBRARY_PATH="${cuda_stubs}:${LD_LIBRARY_PATH:-}"
 if [[ -f "${smart_env}" ]]; then
     source "${smart_env}"
 fi

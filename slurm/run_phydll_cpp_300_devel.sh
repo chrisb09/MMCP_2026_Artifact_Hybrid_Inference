@@ -30,6 +30,8 @@ cd "${project_folder}"
 mkdir -p logs out auxdata "debug_dumps/${snapshot_suffix}"
 
 source "${project_folder}/setup_env_claix23.sh"
+cuda_stubs="/cvmfs/software.hpc.rwth.de/Linux/RH9/x86_64/intel/sapphirerapids/software/CUDA/12.4.0/targets/x86_64-linux/lib/stubs"
+export LD_LIBRARY_PATH="${cuda_stubs}:${LD_LIBRARY_PATH:-}"
 
 export CPP_ML_INTERFACE_PROVIDER_ENV=PHYDLL
 export FLOW_DEBUG_DUMP_DIR="${project_folder}/debug_dumps/${snapshot_suffix}"
