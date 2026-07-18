@@ -43,7 +43,7 @@ export SCOREP_ENABLE_TRACING=false
 export SCOREP_ENABLE_PROFILING=true
 
 cd "${run_dir}"
-srun --label --mpi=pmix \
+srun --label --mpi=pmix --export=ALL \
     --het-group=0 --ntasks=24 --cpus-per-task=1 --cpu-bind=cores \
         "${maia_bin}" ./properties.toml : \
     --het-group=1 --ntasks=1 --cpus-per-task=24 --cpu-bind=cores \
