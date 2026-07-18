@@ -34,6 +34,7 @@ ln -s "${artifact_input}/grid_les_medium.hdf5" "${run_dir}/grid_les_medium.hdf5"
 ln -s "${artifact_input}/restart_les_init_medium.hdf5" "${run_dir}/out/restart_les_ref_medium.hdf5"
 
 export MLCOUPLING_DEBUG_EXPORT=1
+export MLCOUPLING_DEBUG_ALL_RANKS="${MLCOUPLING_DEBUG_ALL_RANKS:-1}"
 export MLCOUPLING_DEBUG_EXPORT_DIR="${run_dir}/debug"
 export MLCOUPLING_DEBUG_RANK=0
 export MLCOUPLING_DEBUG_MAX_INFERENCES=1
