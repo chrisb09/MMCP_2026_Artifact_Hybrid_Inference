@@ -45,6 +45,6 @@ export SCOREP_ENABLE_PROFILING=true
 cd "${run_dir}"
 srun --label --mpi=pmix --export=ALL \
     --het-group=0 --ntasks=24 --cpus-per-task=1 --cpu-bind=cores \
-        bash -c 'export LD_LIBRARY_PATH="'"${cuda_lib}"':${LD_LIBRARY_PATH:-}"; exec "'"${maia_bin}"'" ./properties.toml' : \
+        /bin/bash -c 'export LD_LIBRARY_PATH="'"${cuda_lib}"':${LD_LIBRARY_PATH:-}"; exec "'"${maia_bin}"'" ./properties.toml' : \
     --het-group=1 --ntasks=1 --cpus-per-task=24 --cpu-bind=cores \
-        bash -c 'export LD_LIBRARY_PATH="'"${cuda_lib}"':${LD_LIBRARY_PATH:-}"; exec "'"${maia_bin}"'" ./properties.toml'
+        /bin/bash -c 'export LD_LIBRARY_PATH="'"${cuda_lib}"':${LD_LIBRARY_PATH:-}"; exec "'"${maia_bin}"'" ./properties.toml'
