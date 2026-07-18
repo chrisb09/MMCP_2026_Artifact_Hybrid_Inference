@@ -370,9 +370,15 @@ FvStructuredSolver<nDim>::FvStructuredSolver(MInt solverId, StructuredGrid<nDim>
   overrides.dotted["application.cube_overlap"] = static_cast<int64_t>(mlCubeOverlap);
   overrides.dotted["application.input_sequence_length"] = static_cast<int64_t>(mlInputSeqLen);
   overrides.dotted["application.forecast_window"] = static_cast<int64_t>(mlForecastWindow);
-  overrides.dotted["application.n_ghost_layers"] = static_cast<int64_t>(m_noGhostLayers);
+   overrides.dotted["application.n_ghost_layers"] = static_cast<int64_t>(m_noGhostLayers);
+   if (const char* all_ranks = std::getenv("MLCOUPLING_DEBUG_ALL_RANKS"); all_ranks && std::string(all_ranks) == "1") {
+     const std::string n_cells = std::to_string(m_nCells[0]) + "," + std::to_string(m_nCells[1]) + "," + std::to_string(m_nCells[2]);
+     const std::string offsets = std::to_string(m_nOffsetCells[0]) + "," + std::to_string(m_nOffsetCells[1]) + "," + std::to_string(m_nOffsetCells[2]);
+     setenv("MLCOUPLING_DEBUG_NCELLS", n_cells.c_str(), 1);
+     setenv("MLCOUPLING_DEBUG_OFFSETS", offsets.c_str(), 1);
+   }
 
-  // Create the MLCoupling instance via config file
+   // Create the MLCoupling instance via config file
   m_mlCoupler.reset(MLCoupling<float,float>::create_from_config(
       cpp_ml_config_file(cpp_ml_provider), std::move(input_data), std::move(output_data), overrides));
 

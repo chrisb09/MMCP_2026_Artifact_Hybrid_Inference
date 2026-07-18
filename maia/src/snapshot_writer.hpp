@@ -26,13 +26,17 @@ static std::string s_target_dir;
 static HighFive::File* s_file = nullptr;
 static int s_snapshot_count = 0;
 
-static bool is_rank_zero() {
+static int rank() {
     const char* rank = std::getenv("SLURM_PROCID");
     if (rank) {
-        return std::string(rank) == "0";
+        return std::atoi(rank);
     }
-    // Fallback: if not in SLURM, assume single process
-    return true;
+    return 0;
+}
+
+static bool export_all_ranks() {
+    const char* enabled = std::getenv("MLCOUPLING_DEBUG_ALL_RANKS");
+    return enabled && std::string(enabled) == "1";
 }
 
 static std::string get_slurm_job_id() {
@@ -49,7 +53,7 @@ static void init() {
     if (s_initialized) return;
     s_initialized = true;
 
-    if (!is_rank_zero()) {
+    if (rank() != 0 && !export_all_ranks()) {
         s_enabled = false;
         return;
     }
@@ -64,7 +68,11 @@ static void init() {
     s_enabled = true;
     s_target_dir = std::string(snapshot_dir);
     std::string job_id = get_slurm_job_id();
-    s_tmp_filepath = "/tmp/maia_snapshots_" + job_id + ".h5";
+    if (export_all_ranks()) {
+        s_tmp_filepath = s_target_dir + "/snapshots_" + job_id + "_rank_" + std::to_string(rank()) + ".h5";
+    } else {
+        s_tmp_filepath = "/tmp/maia_snapshots_" + job_id + ".h5";
+    }
 
     std::cout << "[snapshot_writer] Enabled. Writing to: " << s_tmp_filepath << std::endl;
     std::cout << "[snapshot_writer] Target directory (post-job copy): " << s_target_dir << std::endl;
@@ -75,6 +83,7 @@ static void init() {
     // Write metadata
     s_file->createAttribute<std::string>("slurm_job_id", job_id);
     s_file->createAttribute<std::string>("target_dir", s_target_dir);
+    s_file->createAttribute<int>("rank", rank());
 
     s_snapshot_count = 0;
 }

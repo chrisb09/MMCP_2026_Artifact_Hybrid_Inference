@@ -17,7 +17,7 @@ maia_build_dir="${MAIA_BUILD_DIR:-${project_folder}/maia/build_gnu_production_cm
 run_dir="${project_folder}/scratch/current_aix_cpu_${SLURM_JOB_ID}"
 
 source "${project_folder}/setup_env_claix23.sh"
-mkdir -p "${run_dir}/out" "${run_dir}/debug/cmi"
+mkdir -p "${run_dir}/out" "${run_dir}/debug/cmi" "${run_dir}/debug/snapshots"
 ln -s "${project_folder}/input" "${run_dir}/input"
 cp "${project_folder}/config_aix.toml" "${run_dir}/"
 cp "${project_folder}/input/properties_run_les_ref_medium.toml" "${run_dir}/properties.toml"
@@ -33,6 +33,7 @@ ln -s "${project_folder}/input/restart_les_init_medium.hdf5" "${run_dir}/out/res
 
 export CPP_ML_INTERFACE_PROVIDER_ENV=AIX
 export MLCOUPLING_DEBUG_EXPORT=1
+export MLCOUPLING_DEBUG_ALL_RANKS="${MLCOUPLING_DEBUG_ALL_RANKS:-1}"
 export MLCOUPLING_DEBUG_EXPORT_DIR="${run_dir}/debug/cmi"
 export MLCOUPLING_DEBUG_RANK=0
 export MLCOUPLING_DEBUG_MAX_INFERENCES=1
