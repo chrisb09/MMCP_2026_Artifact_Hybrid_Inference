@@ -18,7 +18,7 @@ project_folder="/hpcwork/${username}/MMCP_2026_Artifact_Hybrid_Inference"
 toml_folder="${project_folder}/input"
 provider_suffix="phydll"
 snapshot_suffix="phydll_py"
-maia_build_dir="${project_folder}/maia/build_gnu_production_cmi"
+maia_build_dir="${MAIA_BUILD_DIR:-${project_folder}/maia/build_gnu_production_cmi_scorep}"
 run_steps="${RUN_STEPS:-300}"
 np_phy="${NP_PHY:-24}"
 np_dl="${NP_DL:-24}"
@@ -38,6 +38,10 @@ fi
 export CPP_ML_INTERFACE_PROVIDER_ENV=PHYDLL
 export FLOW_DEBUG_DUMP_DIR="${project_folder}/debug_dumps/${snapshot_suffix}"
 export MAIA_SNAPSHOT_DIR="${project_folder}/debug_dumps/${snapshot_suffix}"
+export MLCOUPLING_DEBUG_EXPORT=1
+export MLCOUPLING_DEBUG_ALL_RANKS="${MLCOUPLING_DEBUG_ALL_RANKS:-1}"
+export MLCOUPLING_DEBUG_EXPORT_DIR="${project_folder}/debug_dumps/${snapshot_suffix}/cmi_${SLURM_JOB_ID}"
+mkdir -p "${MLCOUPLING_DEBUG_EXPORT_DIR}" "${MAIA_SNAPSHOT_DIR}"
 export LD_LIBRARY_PATH="${project_folder}/CPP-ML-Interface/extern/phydll/build/lib:${LD_LIBRARY_PATH:-}"
 export PYTHONPATH="${project_folder}/CPP-ML-Interface/extern/phydll/src/python:${PYTHONPATH:-}"
 export MLCOUPLING_INTRA_OP_THREADS=1

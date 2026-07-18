@@ -17,7 +17,7 @@ username=$(whoami)
 project_folder="/hpcwork/${username}/MMCP_2026_Artifact_Hybrid_Inference"
 toml_folder="${project_folder}/input"
 provider_suffix="smartsim"
-maia_build_dir="${project_folder}/maia/build_gnu_production_cmi"
+maia_build_dir="${MAIA_BUILD_DIR:-${project_folder}/maia/build_gnu_production_cmi_scorep}"
 run_steps="${RUN_STEPS:-300}"
 smart_env="${SMARTSIM_PYTHON_ENV:-/hpcwork/${username}/smartsim/python/smartsim_cpu/bin/activate}"
 
@@ -35,6 +35,10 @@ fi
 export CPP_ML_INTERFACE_PROVIDER_ENV=SMARTSIM
 export FLOW_DEBUG_DUMP_DIR="${project_folder}/debug_dumps/${provider_suffix}"
 export MAIA_SNAPSHOT_DIR="${project_folder}/debug_dumps/${provider_suffix}"
+export MLCOUPLING_DEBUG_EXPORT=1
+export MLCOUPLING_DEBUG_ALL_RANKS="${MLCOUPLING_DEBUG_ALL_RANKS:-1}"
+export MLCOUPLING_DEBUG_EXPORT_DIR="${project_folder}/debug_dumps/${provider_suffix}/cmi_${SLURM_JOB_ID}"
+mkdir -p "${MLCOUPLING_DEBUG_EXPORT_DIR}" "${MAIA_SNAPSHOT_DIR}"
 export SR_CMD_TIMEOUT=600
 export SR_SOCKET_TIMEOUT=600000
 export SR_MODEL_TIMEOUT=600000
