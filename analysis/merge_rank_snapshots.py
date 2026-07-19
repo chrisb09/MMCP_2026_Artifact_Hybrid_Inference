@@ -52,9 +52,11 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--input-dir", required=True, type=Path)
     parser.add_argument("--output", required=True, type=Path)
+    parser.add_argument("--job-id", help="Restrict input to snapshots from one Slurm job")
     args = parser.parse_args()
 
-    paths = sorted(args.input_dir.glob("snapshots_*_rank_*.h5"))
+    pattern = f"snapshots_{args.job_id}_rank_*.h5" if args.job_id else "snapshots_*_rank_*.h5"
+    paths = sorted(args.input_dir.glob(pattern))
     if not paths:
         raise SystemExit(f"No per-rank snapshots found in {args.input_dir}")
     events = snapshot_index(paths)
