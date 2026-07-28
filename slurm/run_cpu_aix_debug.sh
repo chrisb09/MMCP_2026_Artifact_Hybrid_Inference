@@ -13,7 +13,7 @@ set -euo pipefail
 
 project_folder="${SLURM_SUBMIT_DIR:-$(pwd)}"
 run_steps="${RUN_STEPS:-20}"
-maia_build_dir="${MAIA_BUILD_DIR:-${project_folder}/maia/build_gnu_production_cmi_scorep}"
+maia_build_dir="${MAIA_BUILD_DIR:-${project_folder}/maia/build_gnu_production_aix}"
 run_dir="${project_folder}/scratch/current_aix_cpu_${SLURM_JOB_ID}"
 
 source "${project_folder}/setup_env_claix23.sh"
@@ -21,7 +21,7 @@ mkdir -p "${run_dir}/out" "${run_dir}/debug/cmi" "${run_dir}/debug/snapshots"
 ln -s "${project_folder}/input" "${run_dir}/input"
 cp "${project_folder}/config_aix.toml" "${run_dir}/"
 cp "${project_folder}/input/properties_run_les_ref_medium.toml" "${run_dir}/properties.toml"
-sed -i "s/^timeSteps *=.*/timeSteps = ${run_steps}/" "${run_dir}/properties.toml"
+sed -i "s/timeSteps *=.*/timeSteps = ${run_steps}/" "${run_dir}/properties.toml"
 sed -i 's/^mlInterval *=.*/mlInterval = 5/' "${run_dir}/properties.toml"
 sed -i 's/^mlInputLength *=.*/mlInputLength = 5/' "${run_dir}/properties.toml"
 sed -i 's/^mlStepCoefficient *=.*/mlStepCoefficient = 12/' "${run_dir}/properties.toml"
@@ -36,7 +36,7 @@ export MLCOUPLING_DEBUG_EXPORT=1
 export MLCOUPLING_DEBUG_ALL_RANKS="${MLCOUPLING_DEBUG_ALL_RANKS:-1}"
 export MLCOUPLING_DEBUG_EXPORT_DIR="${run_dir}/debug/cmi"
 export MLCOUPLING_DEBUG_RANK=0
-export MLCOUPLING_DEBUG_MAX_INFERENCES=1
+export MLCOUPLING_DEBUG_MAX_INFERENCES="${MLCOUPLING_DEBUG_MAX_INFERENCES:-100}"
 export MAIA_SNAPSHOT_DIR="${run_dir}/debug/snapshots"
 export SCOREP_ENABLE_TRACING=false
 export SCOREP_ENABLE_PROFILING=true

@@ -36,3 +36,9 @@ custom_logs/
 debug_dumps/
 scratch/
 temp_*_properties.toml
+.ssdb_endpoint
+phydll_run_*.conf
+phydll_py_venv/
+rebuild_debug_*.txt
+ssdb_exp/
+analysis/direct_torch_runs/

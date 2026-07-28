@@ -4,7 +4,7 @@ coupling_type = "STATIC"
 [logging]
 level = "info"
 
-[provider]
+[library]
 class = "Smartsim"
 device = "CPU"
 model_backend = "TORCH"

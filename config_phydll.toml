@@ -4,7 +4,7 @@ coupling_type = "STATIC"
 [logging]
 level = "info"
 
-[provider]
+[library]
 class = "Phydll"
 model_file = ""
 backend = "TORCH"

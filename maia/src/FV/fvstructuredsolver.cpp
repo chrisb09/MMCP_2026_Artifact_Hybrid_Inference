@@ -301,25 +301,31 @@ FvStructuredSolver<nDim>::FvStructuredSolver(MInt solverId, StructuredGrid<nDim>
   MInt defaultMLCubeD = 8;
   MInt mlCubeD = Context::getBasicProperty<MInt>("mlCubeD", AT_, &defaultMLCubeD);
 
-  // Allocate float buffers for U/V/W double->float copy
+  // When enabled, ghost cells / BCs are refreshed immediately after ML inference
+  // injection. This is physically more correct but breaks bitwise agreement with
+  // the legacy AIX CMI. Default: off (legacy-compatible).
+  MBool defaultMLUpdateGhost = false;
+  m_mlUpdateGhostAfterInference = Context::getBasicProperty<MBool>("mlUpdateGhostAfterInference", AT_, &defaultMLUpdateGhost);
+
+  // Model input is float32; reconstructed output stays at MAIA precision.
   MLong totalCells = static_cast<MLong>(m_nCells[0]) * static_cast<MLong>(m_nCells[1]) * static_cast<MLong>(m_nCells[2]);
   for (int f = 0; f < 3; ++f) {
     m_mlInputBuf[f].resize(totalCells);
     m_mlOutputBuf[f].resize(totalCells);
   }
 
-  // Build MLCouplingData<float> wrappers around owned float buffers
+  // Keep the model/library boundary float32 while returning double fields to MAIA.
   std::vector<MLCouplingTensor<float>> input_tensors;
-  std::vector<MLCouplingTensor<float>> output_tensors;
+  std::vector<MLCouplingTensor<MFloat>> output_tensors;
   std::vector<std::vector<int>> dims_vec(3, {m_nCells[0], m_nCells[1], m_nCells[2]});
   for (int f = 0; f < 3; ++f) {
     input_tensors.push_back(MLCouplingTensor<float>::wrap_flat(
         m_mlInputBuf[f].data(), dims_vec[f]));
-    output_tensors.push_back(MLCouplingTensor<float>::wrap_flat(
+    output_tensors.push_back(MLCouplingTensor<MFloat>::wrap_flat(
         m_mlOutputBuf[f].data(), dims_vec[f]));
   }
   MLCouplingData<float> input_data(std::move(input_tensors));
-  MLCouplingData<float> output_data(std::move(output_tensors));
+  MLCouplingData<MFloat> output_data(std::move(output_tensors));
 
   // Build ConfigOverrides from Context properties (override config.toml defaults)
   ConfigOverrides overrides;
@@ -329,25 +335,25 @@ FvStructuredSolver<nDim>::FvStructuredSolver(MInt solverId, StructuredGrid<nDim>
   const MString modelPath = Context::getBasicProperty<MString>("modelPath", AT_);
 
   if(cpp_ml_provider == "SMARTSIM") {
-    overrides.dotted["provider.device"] = cpp_ml_device;
-    overrides.dotted["provider.model_backend"] = std::string("TORCH");
-    overrides.dotted["provider.model_path"] = modelPath;
-    overrides.dotted["provider.model_name"] = std::string("model");
+    overrides.dotted["library.device"] = cpp_ml_device;
+    overrides.dotted["library.model_backend"] = std::string("TORCH");
+    overrides.dotted["library.model_path"] = modelPath;
+    overrides.dotted["library.model_name"] = std::string("model");
     if(cpp_ml_device == "GPU") {
-      overrides.dotted["provider.num_gpus"] = static_cast<int64_t>(1);
+      overrides.dotted["library.num_gpus"] = static_cast<int64_t>(1);
     }
   } else if(cpp_ml_provider == "PHYDLL") {
-    overrides.dotted["provider.model_file"] = modelPath;
-    overrides.dotted["provider.backend"] = std::string("TORCH");
-    overrides.dotted["provider.device"] = cpp_ml_device;
+    overrides.dotted["library.model_file"] = modelPath;
+    overrides.dotted["library.backend"] = std::string("TORCH");
+    overrides.dotted["library.device"] = cpp_ml_device;
     if(cpp_ml_device == "GPU") {
-      overrides.dotted["provider.batch_size"] = static_cast<int64_t>(2048);
+      overrides.dotted["library.batch_size"] = static_cast<int64_t>(2048);
     } else {
-      overrides.dotted["provider.batch_size"] = static_cast<int64_t>(0);
+      overrides.dotted["library.batch_size"] = static_cast<int64_t>(0);
     }
   } else {
-    overrides.dotted["provider.app_comm"] = static_cast<void*>(&ml_comm);
-    overrides.dotted["provider.model_file"] = modelPath;
+    overrides.dotted["library.app_comm"] = static_cast<void*>(&ml_comm);
+    overrides.dotted["library.model_file"] = modelPath;
   }
   
   // FIX: The ML Coupler is instantiated before the restart file is read, so
@@ -379,7 +385,7 @@ FvStructuredSolver<nDim>::FvStructuredSolver(MInt solverId, StructuredGrid<nDim>
    }
 
    // Create the MLCoupling instance via config file
-  m_mlCoupler.reset(MLCoupling<float,float>::create_from_config(
+   m_mlCoupler.reset(MLCoupling<float, MFloat, float, float>::create_from_config(
       cpp_ml_config_file(cpp_ml_provider), std::move(input_data), std::move(output_data), overrides));
 
   log_init<9>("Setting up ML Coupler (new CMI)",
@@ -8450,12 +8456,10 @@ MBool FvStructuredSolver<nDim>::solutionStep() {
       }
     }
 
-    // Copy input buffers to output buffers so ghost cells retain
-    // solver CFD values through the ML step.  The FlowExtrapolator
-    // clear_output_active_region() only zeros the interior; ghost
-    // cells must carry the current CFD state to match the old CMI.
+    // Preserve native-precision ghost cells through the ML step. The
+    // FlowExtrapolator only reconstructs the active interior.
     for (int f = 0; f < 3; ++f) {
-      m_mlOutputBuf[f] = m_mlInputBuf[f];
+      std::copy(src[f], src[f] + totalCells, m_mlOutputBuf[f].begin());
     }
 
     // Snapshot: capture "sent" fields (before ML inference)
@@ -8474,7 +8478,7 @@ MBool FvStructuredSolver<nDim>::solutionStep() {
       m_cells->pvariables[PV->V],
       m_cells->pvariables[PV->W]
     };
-    // Copy float output buffers back to solver double* fields
+    // Copy reconstructed native-precision fields back to the solver.
     for (int f = 0; f < 3; ++f) {
       for (MLong i = 0; i < totalCells; ++i) {
         src[f][i] = static_cast<MFloat>(m_mlOutputBuf[f][i]);
@@ -8493,8 +8497,12 @@ MBool FvStructuredSolver<nDim>::solutionStep() {
     globalTimeStep += delta;
     step = true;
 
-    // Update boundary conditions/ghost cells with the new solver state
-    lhsBnd();
+    // Optionally refresh ghost cells / BCs after injection.
+    // Off by default to match legacy AIX CMI behaviour (set mlUpdateGhostAfterInference=1
+    // in properties.toml for the physically-correct mode).
+    if (m_mlUpdateGhostAfterInference) {
+      lhsBnd();
+    }
   }
   RECORD_TIMER_STOP(m_timers[Timers::MLCoupling]);
 

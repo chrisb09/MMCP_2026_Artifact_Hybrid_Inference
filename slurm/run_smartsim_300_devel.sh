@@ -17,7 +17,7 @@ username=$(whoami)
 project_folder="/hpcwork/${username}/MMCP_2026_Artifact_Hybrid_Inference"
 toml_folder="${project_folder}/input"
 provider_suffix="smartsim"
-maia_build_dir="${MAIA_BUILD_DIR:-${project_folder}/maia/build_gnu_production_cmi_scorep}"
+maia_build_dir="${MAIA_BUILD_DIR:-${project_folder}/maia/build_gnu_production_aix}"
 run_steps="${RUN_STEPS:-300}"
 smart_env="${SMARTSIM_PYTHON_ENV:-/hpcwork/${username}/smartsim/python/smartsim_cpu/bin/activate}"
 

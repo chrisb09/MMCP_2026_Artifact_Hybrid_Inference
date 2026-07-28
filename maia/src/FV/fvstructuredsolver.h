@@ -924,9 +924,15 @@ class FvStructuredSolver : public Solver, public StructuredPostprocessing<nDim, 
   }
   virtual void saveAverageRestart() { StructuredPostprocessing<nDim, FvStructuredSolver<nDim>>::saveAverageRestart(); }
 
-  std::unique_ptr<MLCoupling<float,float>> m_mlCoupler;
+  std::unique_ptr<MLCoupling<float, MFloat, float, float>> m_mlCoupler;
   std::vector<float> m_mlInputBuf[3];
-  std::vector<float> m_mlOutputBuf[3];
+  std::vector<MFloat> m_mlOutputBuf[3];
+  // When true, update ghost cells / boundary conditions immediately after ML
+  // inference injection. Physically more correct, but breaks bitwise agreement
+  // with the legacy AIX CMI (which skipped this step on inference steps).
+  // Default: false (legacy-compatible). Enable via mlUpdateGhostAfterInference=1
+  // in properties.toml.
+  MBool m_mlUpdateGhostAfterInference = false;
 };
 
 #endif

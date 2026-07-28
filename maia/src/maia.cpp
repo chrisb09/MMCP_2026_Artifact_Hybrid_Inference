@@ -83,6 +83,7 @@ int main(int argc, char* argv[]) {
 
 /// Main controlling method for MAIA. Calls everything else.
 int MAIA::run() {
+    std::cerr << "[MAIA] entering MAIA::run()" << std::endl;
     #ifdef WITH_SCOREP
         SCOREP_USER_REGION_BEGIN(maiaRunRegion, "m-AIA-Solver::run", SCOREP_USER_REGION_TYPE_FUNCTION);
     #endif
@@ -105,6 +106,7 @@ int MAIA::run() {
 
   int provided;
   MPI_Init_thread(&m_argc, &m_argv, MPI_THREAD_FUNNELED, &provided);
+  std::cerr << "[MAIA] initialized MPI thread" << std::endl;
   // The check for the provided thread level is omitted until OpenMPI reports
   // the correct level and not just MPI_THREAD_SINGLE no matter what
   // if (provided < MPI_THREAD_FUNNELED) {
@@ -138,9 +140,9 @@ int MAIA::run() {
   if(usesPhydllProvider()) {
     int worldRank = 0;
     MPI_Comm_rank(MPI_COMM_WORLD, &worldRank);
-    // Bypass MAIA's MPI diagnostic overload here: this split must match the
-    // DL client's first world-communicator split exactly.
-    PMPI_Comm_split(MPI_COMM_WORLD, 0, worldRank, &maiaCommWorld);
+    std::cerr << "[MAIA " << worldRank << "] entering MPI_Comm_split..." << std::endl;
+    MPI_Comm_split(MPI_COMM_WORLD, 0, worldRank, &maiaCommWorld);
+    std::cerr << "[MAIA " << worldRank << "] completed MPI_Comm_split!" << std::endl;
     ownsMaiaCommWorld = true;
   }
 #endif
