@@ -1,12 +1,13 @@
 #!/usr/bin/zsh
 
-#SBATCH --partition=devel
+#SBATCH --account=thes2181
+#SBATCH --partition=c23mm
 #SBATCH --time=00:30:00
 #SBATCH --nodes=1
-#SBATCH --ntasks=48
+#SBATCH --ntasks=96
 #SBATCH --cpus-per-task=1
 #SBATCH --mem=0
-#SBATCH --oversubscribe
+#SBATCH --exclusive
 #SBATCH --job-name=maia-phydll-cpp-300
 #SBATCH --output=logs/output_phydll_cpp_300_%J.txt
 #SBATCH --error=logs/error_phydll_cpp_300_%J.txt
@@ -18,7 +19,7 @@ project_folder="/hpcwork/${username}/MMCP_2026_Artifact_Hybrid_Inference"
 toml_folder="${project_folder}/input"
 provider_suffix="phydll"
 snapshot_suffix="phydll_cpp"
-maia_build_dir="${MAIA_BUILD_DIR:-${project_folder}/maia/build_gnu_production_phydll}"
+maia_build_dir="${MAIA_BUILD_DIR:-${project_folder}/maia/build_gnu_production}"
 run_steps="${RUN_STEPS:-300}"
 np_phy="${NP_PHY:-24}"
 np_dl="${NP_DL:-24}"
@@ -34,12 +35,8 @@ cuda_stubs="/cvmfs/software.hpc.rwth.de/Linux/RH9/x86_64/intel/sapphirerapids/so
 export LD_LIBRARY_PATH="${cuda_stubs}:${LD_LIBRARY_PATH:-}"
 
 export CPP_ML_INTERFACE_PROVIDER_ENV=PHYDLL
-export FLOW_DEBUG_DUMP_DIR="${project_folder}/debug_dumps/${snapshot_suffix}"
-export MAIA_SNAPSHOT_DIR="${project_folder}/debug_dumps/${snapshot_suffix}"
-export MLCOUPLING_DEBUG_EXPORT=1
-export MLCOUPLING_DEBUG_ALL_RANKS="${MLCOUPLING_DEBUG_ALL_RANKS:-1}"
-export MLCOUPLING_DEBUG_EXPORT_DIR="${project_folder}/debug_dumps/${snapshot_suffix}/cmi_${SLURM_JOB_ID}"
-mkdir -p "${MLCOUPLING_DEBUG_EXPORT_DIR}" "${MAIA_SNAPSHOT_DIR}"
+unset FLOW_DEBUG_DUMP_DIR MAIA_SNAPSHOT_DIR MLCOUPLING_DEBUG_EXPORT
+unset MLCOUPLING_DEBUG_ALL_RANKS MLCOUPLING_DEBUG_EXPORT_DIR
 export LD_LIBRARY_PATH="${project_folder}/CPP-ML-Interface/extern/phydll/build/lib:${LD_LIBRARY_PATH:-}"
 export MLCOUPLING_INTRA_OP_THREADS=1
 export MLCOUPLING_INTER_OP_THREADS=1
@@ -73,18 +70,11 @@ fi
 
 cat > phydll_run_cpp.conf <<EOF
 0-${phy_last} ${project_folder}/CPP-ML-Interface/dl_clients/maia_runner.sh ${maia_build_dir}/bin/maia ./${temp_toml}
-${np_phy}-${dl_last} ${dl_client}
+${np_phy}-${dl_last} ${project_folder}/CPP-ML-Interface/dl_clients/maia_runner.sh ${dl_client}
 EOF
 
 echo "=== Starting PhyDLL C++ run (${np_phy} solver + ${np_dl} DL ranks) ==="
+start_seconds=$(date +%s)
 srun --label --mpi=pmix -n "${total_tasks}" --ntasks-per-node="${total_tasks}" --cpus-per-task=1 --multi-prog ./phydll_run_cpp.conf
 echo "=== MAIA PhyDLL C++ run complete ==="
-
-SNAPSHOT_TMP="/tmp/maia_snapshots_${SLURM_JOB_ID}.h5"
-SNAPSHOT_DEST="${project_folder}/debug_dumps/${snapshot_suffix}/snapshots_300.h5"
-if [[ -f "${SNAPSHOT_TMP}" ]]; then
-    cp "${SNAPSHOT_TMP}" "${SNAPSHOT_DEST}"
-    echo "Snapshot copy complete: ${SNAPSHOT_DEST}"
-else
-    echo "Warning: Snapshot file not found at ${SNAPSHOT_TMP}"
-fi
+echo "BENCHMARK_SOLVER_WALL_SECONDS=$(( $(date +%s) - start_seconds ))"

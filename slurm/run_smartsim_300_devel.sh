@@ -1,12 +1,13 @@
 #!/usr/bin/zsh
 
-#SBATCH --partition=devel
+#SBATCH --account=thes2181
+#SBATCH --partition=c23mm
 #SBATCH --time=01:00:00
 #SBATCH --nodes=1
-#SBATCH --ntasks=48
+#SBATCH --ntasks=96
 #SBATCH --cpus-per-task=1
 #SBATCH --mem=0
-#SBATCH --oversubscribe
+#SBATCH --exclusive
 #SBATCH --job-name=maia-smartsim-300
 #SBATCH --output=logs/output_smartsim_300_%J.txt
 #SBATCH --error=logs/error_smartsim_300_%J.txt
@@ -17,7 +18,7 @@ username=$(whoami)
 project_folder="/hpcwork/${username}/MMCP_2026_Artifact_Hybrid_Inference"
 toml_folder="${project_folder}/input"
 provider_suffix="smartsim"
-maia_build_dir="${MAIA_BUILD_DIR:-${project_folder}/maia/build_gnu_production_aix}"
+maia_build_dir="${MAIA_BUILD_DIR:-${project_folder}/maia/build_gnu_production}"
 run_steps="${RUN_STEPS:-300}"
 smart_env="${SMARTSIM_PYTHON_ENV:-/hpcwork/${username}/smartsim/python/smartsim_cpu/bin/activate}"
 
@@ -35,12 +36,8 @@ else
 fi
 
 export CPP_ML_INTERFACE_PROVIDER_ENV=SMARTSIM
-export FLOW_DEBUG_DUMP_DIR="${project_folder}/debug_dumps/${provider_suffix}"
-export MAIA_SNAPSHOT_DIR="${project_folder}/debug_dumps/${provider_suffix}"
-export MLCOUPLING_DEBUG_EXPORT=1
-export MLCOUPLING_DEBUG_ALL_RANKS="${MLCOUPLING_DEBUG_ALL_RANKS:-1}"
-export MLCOUPLING_DEBUG_EXPORT_DIR="${project_folder}/debug_dumps/${provider_suffix}/cmi_${SLURM_JOB_ID}"
-mkdir -p "${MLCOUPLING_DEBUG_EXPORT_DIR}" "${MAIA_SNAPSHOT_DIR}"
+unset FLOW_DEBUG_DUMP_DIR MAIA_SNAPSHOT_DIR MLCOUPLING_DEBUG_EXPORT
+unset MLCOUPLING_DEBUG_ALL_RANKS MLCOUPLING_DEBUG_EXPORT_DIR
 export SR_CMD_TIMEOUT=600
 export SR_SOCKET_TIMEOUT=600000
 export SR_MODEL_TIMEOUT=600000
@@ -100,15 +97,8 @@ export SSDB="$(cat .ssdb_endpoint)"
 echo "SSDB=${SSDB}"
 
 echo "=== Starting MAIA SmartSim run (24 solver ranks) ==="
+start_seconds=$(date +%s)
 srun --label --mpi=pmix -n 24 --ntasks-per-node=24 --cpus-per-task=1 --cpu-bind=cores \
-    "${maia_build_dir}/bin/maia" ./"${temp_toml}"
+    "${project_folder}/CPP-ML-Interface/dl_clients/maia_runner.sh" "${maia_build_dir}/bin/maia" ./"${temp_toml}"
 echo "=== MAIA SmartSim run complete ==="
-
-SNAPSHOT_TMP="/tmp/maia_snapshots_${SLURM_JOB_ID}.h5"
-SNAPSHOT_DEST="${project_folder}/debug_dumps/${provider_suffix}/snapshots_300.h5"
-if [[ -f "${SNAPSHOT_TMP}" ]]; then
-    cp "${SNAPSHOT_TMP}" "${SNAPSHOT_DEST}"
-    echo "Snapshot copy complete: ${SNAPSHOT_DEST}"
-else
-    echo "Warning: Snapshot file not found at ${SNAPSHOT_TMP}"
-fi
+echo "BENCHMARK_SOLVER_WALL_SECONDS=$(( $(date +%s) - start_seconds ))"

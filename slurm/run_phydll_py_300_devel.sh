@@ -1,12 +1,13 @@
 #!/usr/bin/zsh
 
-#SBATCH --partition=devel
+#SBATCH --account=thes2181
+#SBATCH --partition=c23mm
 #SBATCH --time=00:30:00
 #SBATCH --nodes=1
-#SBATCH --ntasks=48
+#SBATCH --ntasks=96
 #SBATCH --cpus-per-task=1
 #SBATCH --mem=0
-#SBATCH --oversubscribe
+#SBATCH --exclusive
 #SBATCH --job-name=maia-phydll-py-300
 #SBATCH --output=logs/output_phydll_py_300_%J.txt
 #SBATCH --error=logs/error_phydll_py_300_%J.txt
@@ -35,13 +36,9 @@ cuda_stubs="/cvmfs/software.hpc.rwth.de/Linux/RH9/x86_64/intel/sapphirerapids/so
 export LD_LIBRARY_PATH="${cuda_stubs}:${LD_LIBRARY_PATH:-}"
 
 export CPP_ML_INTERFACE_PROVIDER_ENV=PHYDLL
-export FLOW_DEBUG_DUMP_DIR="${project_folder}/debug_dumps/${snapshot_suffix}"
-export MAIA_SNAPSHOT_DIR="${project_folder}/debug_dumps/${snapshot_suffix}"
-export MLCOUPLING_DEBUG_EXPORT=1
-export MLCOUPLING_DEBUG_ALL_RANKS="${MLCOUPLING_DEBUG_ALL_RANKS:-1}"
-export MLCOUPLING_DEBUG_MAX_INFERENCES=100
-export MLCOUPLING_DEBUG_EXPORT_DIR="${project_folder}/debug_dumps/${snapshot_suffix}/cmi_${SLURM_JOB_ID}"
-mkdir -p "${MLCOUPLING_DEBUG_EXPORT_DIR}" "${MAIA_SNAPSHOT_DIR}"
+unset FLOW_DEBUG_DUMP_DIR MAIA_SNAPSHOT_DIR MLCOUPLING_DEBUG_EXPORT
+unset MLCOUPLING_DEBUG_ALL_RANKS MLCOUPLING_DEBUG_MAX_INFERENCES
+unset MLCOUPLING_DEBUG_EXPORT_DIR
 export LD_LIBRARY_PATH="${project_folder}/CPP-ML-Interface/extern/phydll/build/lib:${LD_LIBRARY_PATH:-}"
 export PYTHONPATH="${project_folder}/CPP-ML-Interface/extern/phydll/src/python:${PYTHONPATH:-}"
 export MLCOUPLING_INTRA_OP_THREADS=1
@@ -52,7 +49,7 @@ export OPENBLAS_NUM_THREADS=1
 export VECLIB_MAXIMUM_THREADS=1
 export NUMEXPR_NUM_THREADS=1
 export PHYDLL_DL_COUNT="${PHYDLL_DL_COUNT:-1}"
-export PHYDLL_DL_EXIT_GRACE_SECONDS="${PHYDLL_DL_EXIT_GRACE_SECONDS:-900}"
+export PHYDLL_DL_EXIT_GRACE_SECONDS="${PHYDLL_DL_EXIT_GRACE_SECONDS:-5}"
 export SCOREP_ENABLE_TRACING=false
 export SCOREP_ENABLE_PROFILING=false
 unset SCOREP_MPI_ENABLE_GROUPS
@@ -80,14 +77,7 @@ ${np_phy}-${dl_last} ${project_folder}/CPP-ML-Interface/dl_clients/python_runner
 EOF
 
 echo "=== Starting PhyDLL Python run (${np_phy} solver + ${np_dl} DL ranks) ==="
+start_seconds=$(date +%s)
 srun --label --mpi=pmix -n "${total_tasks}" --ntasks-per-node="${total_tasks}" --cpus-per-task=1 --multi-prog ./phydll_run_py.conf
 echo "=== MAIA PhyDLL Python run complete ==="
-
-SNAPSHOT_TMP="/tmp/maia_snapshots_${SLURM_JOB_ID}.h5"
-SNAPSHOT_DEST="${project_folder}/debug_dumps/${snapshot_suffix}/snapshots_300.h5"
-if [[ -f "${SNAPSHOT_TMP}" ]]; then
-    cp "${SNAPSHOT_TMP}" "${SNAPSHOT_DEST}"
-    echo "Snapshot copy complete: ${SNAPSHOT_DEST}"
-else
-    echo "Warning: Snapshot file not found at ${SNAPSHOT_TMP}"
-fi
+echo "BENCHMARK_SOLVER_WALL_SECONDS=$(( $(date +%s) - start_seconds ))"

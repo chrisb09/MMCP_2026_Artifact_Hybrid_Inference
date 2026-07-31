@@ -9,9 +9,7 @@
 #SBATCH --output=rebuild_debug_%j.txt
 set -euxo pipefail
 source setup_env_claix23.sh
-export CPP_ML_INTERFACE_PROVIDER_ENV="${CPP_ML_INTERFACE_PROVIDER_ENV:-AIX}"
-provider_suffix="${(L)CPP_ML_INTERFACE_PROVIDER_ENV}"
-maia_build_dir="${MAIA_BUILD_DIR:-${PWD}/maia/build_gnu_production_${provider_suffix}}"
+maia_build_dir="${MAIA_BUILD_DIR:-${PWD}/maia/build_gnu_production}"
 
 # libclang for registry generation (if generated_registry.hpp needs regeneration)
 pip install "clang==17.0.6" "libclang==17.0.6" 2>&1
@@ -27,8 +25,7 @@ NPROC=${SLURM_CPUS_ON_NODE:-24}
 # sources automatically because the child project inherits parent CMAKE_CXX_FLAGS.
 echo "=== Configuring ${maia_build_dir} with FLOW_DUMP_DEBUG ==="
 cd "${maia_build_dir}"
-CURRENT_FLAGS=$(cmake -LA . 2>/dev/null | grep "^CMAKE_CXX_FLAGS:STRING=" | sed 's/^CMAKE_CXX_FLAGS:STRING=//')
-cmake . -DCMAKE_CXX_FLAGS:STRING="${CURRENT_FLAGS} -Wno-array-bounds -DFLOW_DUMP_DEBUG"
+cmake . -DCMAKE_CXX_FLAGS:STRING="-Wno-array-bounds -DFLOW_DUMP_DEBUG"
 
 echo "=== Building MAIA (incremental, only files affected by header change) ==="
 cmake --build "${maia_build_dir}" -j${NPROC}
