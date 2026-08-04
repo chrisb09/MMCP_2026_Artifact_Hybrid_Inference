@@ -22,12 +22,15 @@ fi
 
 toml_folder="${project_folder}/input"
 
-# ---- Debug dump settings ----
-export FLOW_DEBUG_DUMP_DIR="/tmp/flow_debug"
-export MAIA_SNAPSHOT_DIR="${project_folder}/debug_dumps"
-rm -rf "${FLOW_DEBUG_DUMP_DIR}"
-mkdir -p "${FLOW_DEBUG_DUMP_DIR}"
-echo "FLOW_DEBUG_DUMP_DIR=${FLOW_DEBUG_DUMP_DIR}"
+# ---- Debug dump settings (CMI uses MLCOUPLING_DEBUG_* env vars) ----
+dest="${project_folder}/debug_dumps"
+rm -rf "${dest}"
+mkdir -p "${dest}"
+export MLCOUPLING_DEBUG_EXPORT=1
+export MLCOUPLING_DEBUG_EXPORT_DIR="${dest}"
+export MLCOUPLING_DEBUG_ALL_RANKS=1
+export MLCOUPLING_DEBUG_MAX_INFERENCES=1
+echo "MLCOUPLING_DEBUG_EXPORT_DIR=${dest}"
 
 # ---- Create a 20-step TOML override with CPU-only hostFraction ----
 TOML_FILE="${toml_folder}/properties_run_les_ref_medium.toml"
@@ -62,22 +65,15 @@ source "${project_folder}/setup_env_claix23.sh"
 
 export CPP_ML_INTERFACE_PROVIDER_ENV="${CPP_ML_INTERFACE_PROVIDER_ENV:-AIX}"
 provider_suffix="${(L)CPP_ML_INTERFACE_PROVIDER_ENV}"
-maia_build_dir="${project_folder}/maia/build_gnu_production_cmi"
+maia_build_dir="${project_folder}/maia/build_gnu_production"
 
 
 echo "=== Starting debug run (20 steps, CPU-only devel partition) ==="
 srun --label ${maia_build_dir}/bin/maia ./"${temp_toml}"
 
 echo "=== Run complete ==="
-echo "Debug dumps in ${FLOW_DEBUG_DUMP_DIR}:"
-ls -lh "${FLOW_DEBUG_DUMP_DIR}/" || echo "No dumps generated!"
-
-# ---- Copy dumps to persistent workspace ----
-dest="${project_folder}/debug_dumps"
-rm -rf "${dest}"
-mkdir -p "${dest}"
-echo "Copying dumps to ${dest} ..."
-cp -r "${FLOW_DEBUG_DUMP_DIR}/." "${dest}/"
-echo "Manifest:"
-cat "${dest}/manifest.txt" 2>/dev/null || echo "(no manifest found)"
+echo "Debug dumps in ${dest}:"
+ls -lh "${dest}/" || echo "No dumps generated!"
+echo "Manifest (rank 0, inference 1):"
+cat "${dest}/current_rank_0_inference_1_manifest.txt" 2>/dev/null || echo "(no manifest found)"
 echo "=== Done. Dumps in ${dest} ==="

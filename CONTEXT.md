@@ -1,6 +1,6 @@
 # CONTEXT.md — MMCP 2026 Artifact Hybrid Inference Debugging Session
 
-**Last updated:** 2026-07-05 19:22 CEST  
+**Last updated:** 2026-08-01 CEST  
 **Conversation ID:** `c2157c33-8fcd-446a-b7f9-7bd3733d8afc`
 
 ---

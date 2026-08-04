@@ -144,8 +144,31 @@ def load_manifest(dump_dir: str) -> list:
 
 
 def find_dump(dump_dir: str, step: int, phase: str, field: Optional[int] = None, rank: int = 0) -> Optional[str]:
-    """Construct the expected filename and check existence."""
-    # First try with rank in name
+    """Construct the expected filename and check existence.
+
+    Supports two naming conventions:
+      Old (step-indexed):  step{step:04d}[_rank{rank}]_{phase}[_field{field}].bin
+      New (CMI export):    current_rank_{rank}_inference_{step}_{phase_mapped}[_field{field}].bin
+    """
+    # New CMI naming: map phase names to CMI dump stage names
+    phase_map = {
+        'assembled_input':       'assembled_input',
+        'raw_output':            'raw_provider_output',
+        'reconstructed_output':  'reconstructed_fields',
+        'raw_input':             'raw_fields',
+        'normalized_input':      'normalized_input',
+        'denormalized_output':   'denormalized_output',
+    }
+    cmi_stage = phase_map.get(phase, phase)
+    if field is not None:
+        cmi_fname = f"current_rank_{rank}_inference_{step}_{cmi_stage}_field{field}.bin"
+    else:
+        cmi_fname = f"current_rank_{rank}_inference_{step}_{cmi_stage}.bin"
+    p_cmi = os.path.join(dump_dir, cmi_fname)
+    if os.path.exists(p_cmi):
+        return p_cmi
+
+    # Old naming: with rank
     if field is not None:
         fname_rank = f"step{step:04d}_rank{rank}_{phase}_field{field}.bin"
     else:
@@ -154,7 +177,7 @@ def find_dump(dump_dir: str, step: int, phase: str, field: Optional[int] = None,
     if os.path.exists(p_rank):
         return p_rank
 
-    # Fallback to no rank in name (for older dumps)
+    # Old naming: without rank
     if field is not None:
         fname_norank = f"step{step:04d}_{phase}_field{field}.bin"
     else:
@@ -164,6 +187,53 @@ def find_dump(dump_dir: str, step: int, phase: str, field: Optional[int] = None,
         return p_norank
 
     return None
+
+
+def load_new_manifest(dump_dir: str, rank: int = 0, inference: int = 1) -> dict:
+    """Load the new-style CMI manifest (current_rank_{rank}_inference_{n}_manifest.txt)
+    and return a layout dict compatible with what load_cube_layout returns."""
+    path = os.path.join(dump_dir, f"current_rank_{rank}_inference_{inference}_manifest.txt")
+    if not os.path.exists(path):
+        return {}
+    layout = {}
+    with open(path) as f:
+        for line in f:
+            line = line.strip()
+            if not line or line.startswith('#'):
+                continue
+            if '=' in line:
+                key, _, val = line.partition('=')
+                key = key.strip()
+                val = val.strip()
+                try:
+                    layout[key] = int(val)
+                except ValueError:
+                    try:
+                        layout[key] = float(val)
+                    except ValueError:
+                        layout[key] = val
+    # Normalise key names to match what the rest of the script expects
+    rename = {
+        'num_cubes':          'n_cubes_per_field',
+        'n_cells':            'grid_dims',
+        'active_cells':       'active_cells',
+        'input_sequence_length': 'input_sequence_length',
+    }
+    for old, new in rename.items():
+        if old in layout and new not in layout:
+            layout[new] = layout[old]
+    # Parse comma-separated cell counts
+    for key in ('grid_dims', 'active_cells', 'n_cells'):
+        if key in layout and isinstance(layout[key], str):
+            layout[key] = [int(x) for x in layout[key].split(',')]
+    # Load cube_volume_indices from the binary dump
+    cvi_path = os.path.join(dump_dir, f"current_rank_{rank}_inference_{inference}_cube_volume_indices.bin")
+    if os.path.exists(cvi_path):
+        flat = np.fromfile(cvi_path, dtype=np.int32)
+        cube_size = layout.get('cube_size', 512)
+        n_cubes = layout.get('n_cubes_per_field', len(flat) // cube_size)
+        layout['cube_volume_indices'] = flat.reshape(n_cubes, cube_size).tolist()
+    return layout
 
 
 # ---------------------------------------------------------------------------
@@ -272,6 +342,20 @@ def assemble_input_tensor(history: list, cube_volume_indices: list,
     return buf.reshape(field_count * num_cubes, input_sequence_length, cube_size)
 
 
+def build_active_mask(n_cells: list, n_ghost: int) -> np.ndarray:
+    """Return a boolean mask (flat, Fortran/x-fastest order) True for active (non-ghost) cells.
+    Mirrors C++ clear_output_active_region which skips n_ghost layers on each side."""
+    nz, ny, nx = n_cells
+    N = nz * ny * nx
+    mask = np.zeros(N, dtype=bool)
+    for iz in range(n_ghost, nz - n_ghost):
+        for iy in range(n_ghost, ny - n_ghost):
+            # x varies fastest (Fortran/MAIA cell ordering)
+            start = n_ghost + nx * (iy + ny * iz)
+            mask[start:start + nx - 2 * n_ghost] = True
+    return mask
+
+
 def reconstruct_output(model_output_flat: np.ndarray,
                        cube_volume_indices: list,
                        num_cubes: int, cube_size: int,
@@ -290,20 +374,26 @@ def reconstruct_output(model_output_flat: np.ndarray,
     # model_output_flat should be [field_count * num_cubes * forecast_window * cube_size]
     model_output = model_output_flat.reshape(field_count * num_cubes, forecast_window, cube_size)
 
+    # Widen model output to float64 before accumulation — mirrors C++ which casts
+    # LibraryOutput (float32) -> double via a widened[] vector before scatter.
+    # Without this, float32 accumulation produces ~1 ULP divergence per overlapping
+    # cell vs the C++ double-precision accumulator.
+    widened = model_output.astype(np.float64)
+
     fields = []
     for field in range(field_count):
-        dst = np.zeros(N, dtype=np.float32)
+        # Accumulate in float64 to match C++ std::vector<double> accum
+        accum = np.zeros(N, dtype=np.float64)
         for cube in range(num_cubes):
             batch_index = field * num_cubes + cube
-            # Take last forecast window slot (forecast_window - 1)
-            src_off_base = batch_index * forecast_window + (forecast_window - 1)
-            src_vals = model_output[batch_index, forecast_window - 1, :]
+            src_vals = widened[batch_index, forecast_window - 1, :]
             mapping = cube_volume_indices[cube]
             for local in range(cube_size):
-                dst[mapping[local]] += src_vals[local]
-        # Divide by weight
+                accum[mapping[local]] += src_vals[local]
+        # Divide by weight in float64, then cast to float32 — matches C++
         nonzero = weight > 0.0
-        dst[nonzero] /= weight[nonzero].astype(np.float32)
+        dst = np.zeros(N, dtype=np.float32)
+        dst[nonzero] = (accum[nonzero] / weight[nonzero]).astype(np.float32)
         fields.append(dst)
     return fields
 
@@ -388,13 +478,19 @@ def main():
 
     # ---- 1. Load cube layout ------------------------------------------------
     layout_path = os.path.join(dump_dir, 'cube_layout.txt')
-    if not os.path.exists(layout_path):
-        print(f"ERROR: cube_layout.txt not found at {layout_path}")
-        print("  → Run the debug build first (Steps 2+3 in DEBUG_PLAN.md)")
-        sys.exit(1)
+    if os.path.exists(layout_path):
+        print(f"\n[1/5] Loading cube layout from {layout_path}")
+        layout = load_cube_layout(layout_path)
+    else:
+        # New CMI dump format: load from per-rank manifest
+        print(f"\n[1/5] cube_layout.txt not found; trying new CMI manifest for rank {args.rank}...")
+        layout = load_new_manifest(dump_dir, rank=args.rank, inference=1)
+        if not layout:
+            print(f"ERROR: No layout found in {dump_dir} (neither cube_layout.txt nor CMI manifest)")
+            print("  → Run the debug build first (Steps 2+3 in DEBUG_PLAN.md)")
+            sys.exit(1)
+        print(f"  Loaded layout from new CMI manifest (rank {args.rank}, inference 1)")
 
-    print(f"\n[1/5] Loading cube layout from {layout_path}")
-    layout = load_cube_layout(layout_path)
     cube_dim      = layout['cube_dimension']
     cube_overlap  = layout['cube_overlap']
     num_cubes     = layout['n_cubes_per_field']
@@ -516,20 +612,37 @@ def main():
     # debug_step_counter_ increments once per ml_step() call (send or inference).
     # With 24 MPI ranks all writing to the same /tmp dir, only some step indices
     # survive. Use --inference-dump-idx to override if the empirical counter differs.
+    # Detect new CMI dump format (current_rank_N_inference_M_* files)
+    new_format = os.path.exists(
+        os.path.join(dump_dir, f"current_rank_{args.rank}_inference_1_manifest.txt"))
+    if new_format:
+        print(f"  [auto-detect] New CMI dump format detected (current_rank_*_inference_* files).")
+
     if args.inference_dump_idx is not None:
         infer_dump_idx = args.inference_dump_idx
+    elif new_format:
+        infer_dump_idx = 1  # CMI inference counter starts at 1
     else:
         infer_dump_idx = (len(send_steps) - 1) + args.dump_step_offset
 
+
     # 4a. raw_input for send steps vs reference "sent"
+    # In the new CMI format raw_fields are only dumped at inference time (last send step).
     print(f"\n  --- raw_input vs reference 'sent' ---")
     for si, step in enumerate(send_steps):
-        dump_idx = si + args.dump_step_offset
+        if new_format:
+            # Only the last send step's raw fields are available in the new format
+            if si < len(send_steps) - 1:
+                print(f"  [new format] Skipping send step {step} (raw_fields only at inference step).")
+                continue
+            dump_idx = infer_dump_idx
+        else:
+            dump_idx = si + args.dump_step_offset
         snap = ref_fields.get((step, 'sent'), None)
         for fi, fname in enumerate(field_names):
             cpp_path = find_dump(dump_dir, dump_idx, 'raw_input', fi, rank=args.rank)
             if cpp_path is None:
-                print(f"  ⚠️  step{dump_idx:04d}_raw_input_field{fi}.bin not found — skipping.")
+                print(f"  ⚠️  raw_input field{fi} for step {step} not found — skipping.")
                 continue
             cpp_raw = load_bin(cpp_path)
             if snap is not None and fname in snap:
@@ -537,6 +650,7 @@ def main():
                 ok = compare_arrays(cpp_raw, ref_raw,
                                     f"step {step} raw_input field{fi}({fname}) vs ref sent", tol)
                 all_ok = all_ok and ok
+
 
     # 4b. assembled_input: Python vs C++
     print(f"\n  --- assembled_input: Python vs C++ ---")
@@ -601,6 +715,12 @@ def main():
 
     # 4d. Reconstructed output: Python vs C++ and vs reference "received"
     py_recon_fields = None
+    # Build active-cell mask: ghost cells in C++ dump retain stale solver values
+    # (clear_output_active_region only zeroes the interior before scatter).
+    # Comparisons must be restricted to active cells to avoid false mismatches.
+    active_mask = build_active_mask(grid_dims, n_ghost) if (grid_dims and n_ghost > 0) else None
+    if active_mask is not None:
+        print(f"  Active cell mask: {active_mask.sum()} / {len(active_mask)} cells")
     if py_raw_output is not None:
         print(f"\n  --- Reconstructing Python output fields ---")
         try:
@@ -620,10 +740,12 @@ def main():
             print(f"  ⚠️  step{infer_dump_idx:04d}_reconstructed_output_field{fi}.bin not found.")
             recon_match = False
             continue
-        cpp_recon = load_bin(cpp_path)
+        cpp_recon = load_bin(cpp_path, dtype=np.float64 if new_format else np.float32).astype(np.float32)
         if py_recon_fields is not None:
-            ok = compare_arrays(py_recon_fields[fi], cpp_recon,
-                                f"Python recon field{fi}({fname}) vs C++", tol)
+            py_vals  = py_recon_fields[fi][active_mask] if active_mask is not None else py_recon_fields[fi]
+            cpp_vals = cpp_recon[active_mask]            if active_mask is not None else cpp_recon
+            ok = compare_arrays(py_vals, cpp_vals,
+                                f"Python recon field{fi}({fname}) vs C++ [active]", tol)
             all_ok = all_ok and ok
             recon_match = recon_match and ok
         else:
@@ -636,8 +758,10 @@ def main():
     if ref_recv and py_recon_fields is not None:
         for fi, fname in enumerate(field_names):
             if fname in ref_recv:
-                ok = compare_arrays(py_recon_fields[fi], ref_recv[fname],
-                                    f"Python recon field{fi}({fname}) vs ref received", tol)
+                py_vals  = py_recon_fields[fi][active_mask] if active_mask is not None else py_recon_fields[fi]
+                ref_vals = ref_recv[fname][active_mask]      if active_mask is not None else ref_recv[fname]
+                ok = compare_arrays(py_vals, ref_vals,
+                                    f"Python recon field{fi}({fname}) vs ref received [active]", tol)
                 all_ok = all_ok and ok
                 py_vs_ref_ok = py_vs_ref_ok and ok
     else:
@@ -650,10 +774,14 @@ def main():
         for fi, fname in enumerate(field_names):
             cpp_path = find_dump(dump_dir, infer_dump_idx, 'reconstructed_output', fi, rank=args.rank)
             if cpp_path is not None:
-                cpp_recon = load_bin(cpp_path)
+                # New format dumps reconstructed fields as float64
+                recon_dtype = np.float64 if new_format else np.float32
+                cpp_recon = load_bin(cpp_path, dtype=recon_dtype).astype(np.float32)
                 if fname in ref_recv:
-                    ok = compare_arrays(cpp_recon, ref_recv[fname],
-                                        f"C++ recon field{fi}({fname}) vs ref received", tol)
+                    cpp_vals = cpp_recon[active_mask]   if active_mask is not None else cpp_recon
+                    ref_vals = ref_recv[fname][active_mask] if active_mask is not None else ref_recv[fname]
+                    ok = compare_arrays(cpp_vals, ref_vals,
+                                        f"C++ recon field{fi}({fname}) vs ref received [active]", tol)
                     all_ok = all_ok and ok
                     cpp_vs_ref_ok = cpp_vs_ref_ok and ok
             else:
