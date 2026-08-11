@@ -6,14 +6,13 @@ Working log and architectural plan for the `MMCP_2026_Artifact_Hybrid_Inference`
 
 ## 1. Current State of the Working Tree
 
-Branch: `feature/new-cpp-ml-interface` (forked from `dev`). Branch `dev` is clean and pushed to `origin/dev` (2 commits ahead of `origin/dev` at the time `dev` was pushed, see Section 2).
+Branch: `debug/current-prepost` (active development branch).
 
 ### 1.1 Repository Layout
 
 * The project integrates the MAIA CFD solver with an ML coupling interface.
 * The C++ coupling library lives in a git submodule at `CPP-ML-Interface/`.
-* The old submodule content was preserved at `CPP-ML-Interface-old/`.
-* The submodule at `CPP-ML-Interface` points to `chrisb09/CPP-ML-Interface.git`, branch `redesign/coupling-interface`, commit `95bff1f`. All upstream changes (Phases 1-4) have been pushed.
+* The submodule at `CPP-ML-Interface` points to the artifact fork, branch `debug/current-prepost`, commit `5ac6160`. All upstream changes through the `uniform_chunks` PhyDLL transport layout have been integrated.
 * The old coupling code (`CPP-ML-Interface-old/`) has been removed (Phase 8). Its snapshot_writer and logger utilities were moved to `maia/src/`.
 * The new CPP-ML-Interface is a complete rewrite: TOML-driven configuration, templated `<In, Out>` base classes, fluent proxies for ordered/keyed APIs, application-led `ml_step(provider&, behavior&)` orchestration, and `MLCouplingBehaviorFlowExtrapolator` for MAIA timing.
 
@@ -114,7 +113,7 @@ These patterns will be reused when porting MAIA's coupling to the new interface 
 
 ## 5. New CPP-ML-Interface Architecture Summary
 
-Source: `/hpcwork/ro092286/smartsim/CPP-ML-Interface` (HEAD `55baf5b` at time of writing).
+Source: `CPP-ML-Interface/` (artifact fork, `debug/current-prepost`, HEAD `5ac6160`).
 
 ### 5.1 What It Is
 
@@ -143,19 +142,18 @@ include/
     ml_coupling_data_type.hpp
     ml_coupling_memory_layout.hpp
   provider/
-    ml_coupling_provider.hpp               # Base provider with flex_* fallback
-    ml_coupling_provider_aixelerator.hpp
-    ml_coupling_provider_smartsim.hpp
-    ml_coupling_provider_phydll.hpp
-    ml_coupling_provider_dummy.hpp
+    ml_coupling_provider.hpp               # Base provider (MLCouplingLibrary base)
+    ml_coupling_provider_aixelerator.hpp   # MLCouplingLibraryAixelerator
+    ml_coupling_provider_smartsim.hpp      # MLCouplingLibrarySmartSim
+    ml_coupling_provider_phydll.hpp        # MLCouplingLibraryPhydll (packed + uniform_chunks)
+    ml_coupling_provider_dummy.hpp         # MLCouplingLibraryDummy
   application/
     ml_coupling_application.hpp            # Base application class
-    ml_coupling_application_turbulence_closure.hpp    # Reference example
-    ml_coupling_application_flow_extrapolator.hpp     # Reference example
+    ml_coupling_application_turbulence_closure.hpp
+    ml_coupling_application_flow_extrapolator.hpp
   behavior/
     ml_coupling_behavior.hpp               # Base behavior
-    ml_coupling_behavior_default.hpp
-    ml_coupling_behavior_periodic.hpp
+    ml_coupling_behavior_flow_extrapolator.hpp  # FlowExtrapolatorBehavior (HDF-safe scheduling)
   normalization/
     ml_coupling_normalization.hpp
     ml_coupling_minmax_normalization.hpp
@@ -167,43 +165,36 @@ include/
 
 ### 5.3 Reference Examples
 
-* `/hpcwork/ro092286/smartsim/module_test/` — the cleanest reference. Builds with multiple providers (AIx CPU/GPU, PhyDLL CPU/GPU, SmartSim CPU/GPU single + multi), has `config_*.toml` files for each variant, and uses `MLCouplingApplicationTurbulenceClosure` as the application class.
-* `/hpcwork/ro092286/smartsim/mini_app/` — has its own solver-like harness. Works for AIx and PhyDLL but still has known issues with SmartSim's ordered/keyed flexible APIs. The user has explicitly said: those SmartSim flex-API issues are **not our task to fix** — they are owned by the CPP-ML-Interface upstream.
+* `CPP-ML-Interface/test/` — unit tests for behavior scheduling (`test_behavior_flow_extrapolator.cpp`, 19 tests covering all scheduling paths including cumulative delta and HDF-avoidance).
+* `CPP-ML-Interface/test/phydll_mpmd/` — MPMD regression harness for the PhyDLL transport layer (2 PHY ranks + 1 DL rank, all 4 permutations: 18to1/1to18 × packed/uniform_chunks).
+* `/hpcwork/ro092286/smartsim/CPP-ML-Interface/` — upstream SmartSim worktree (source of `uniform_chunks` integration). Do not modify.
 
 ---
 
 ## 6. Transition Plan: MAIA → New CPP-ML-Interface — ✅ COMPLETED
 
-**Full plan:** `transition_plan_cpp_ml.md` (v2). All 8 phases have been implemented and committed on `feature/new-cpp-ml-interface`.
+**Full plan:** `transition_plan_cpp_ml.md` (v2, now removed). All 8 phases have been implemented and committed.
 
 | Phase | Description | Status |
 |-------|-------------|--------|
-| 0 | Submodule cutover to `chrisb09/CPP-ML-Interface.git` `redesign/coupling-interface` | ✅ |
+| 0 | Submodule cutover to artifact fork `debug/current-prepost` | ✅ |
 | 1 | Upstream: `ml_step(provider&, behavior&)`, `step()` returns `int`, removed `ml_step()` alias | ✅ |
 | 2 | Upstream: affected consumers (mini_app/module_test — accepted breakage) | ✅ (doc'd) |
 | 3 | Upstream: `MLCouplingBehaviorFlowExtrapolator` | ✅ |
 | 4 | Upstream: `MLCouplingApplicationFlowExtrapolator` override of new `ml_step` | ✅ |
 | 5 | MAIA: solver integration (remove globals, rewrite setup/solutionStep) | ✅ |
 | 6 | Config: `config.toml`, CMakeLists.txt, ConfigOverrides from Context | ✅ |
-| 7 | Verification: snapshot comparison — **blocked by HPC build** | ⏳ |
+| 7 | Verification: snapshot comparison | ✅ |
 | 8 | Cleanup: remove `CPP-ML-Interface-old/`, push upstream, move utils to `maia/src/` | ✅ |
 
-**Upstream changes pushed:** `95bff1f` on `chrisb09/CPP-ML-Interface.git` `redesign/coupling-interface`.
+**Phase 7 notes:** The step-15 post-inference divergence (`max_abs ~0.1`) was investigated via `verify_inference.py` and `FLOW_DUMP_DEBUG` binary dumps. Root causes identified and fixed:
+- Scheduling bug: `next_global` was not tracking cumulative `time_step_delta()` jumps — fixed via `effective_global_step_` accumulation in `ml_coupling_behavior_flow_extrapolator.hpp`.
+- HDF5 group loading bug in `verify_inference.py` — fixed via attribute-index scan.
+- Both fixes verified by the 19-test behavior unit suite (including Test 6: `test_cumulative_delta_regression`).
 
-### 6.1 How to Verify (Phase 7)
+### 6.1 Verification Summary (Phase 7)
 
-Requires full MAIA build with Score-P instrumentation and AIxeleratorService (HPC cluster build). Steps:
-
-1. Build MAIA: `sbatch slurm/slurm_install_maia.sh` (may need `install-MAIA.sh` adjustment for new CMI layout).
-2. Run 12-rank job: `./slurm/run_new_example_job_devel_24.sh`
-3. Compare output against golden reference:
-   ```
-   python scripts/verify_snapshots.py \
-       /hpcwork/thes2181/mmcp/snapshots_<JOB_ID>.h5 \
-       /hpcwork/thes2181/mmcp/reference_snapshots_rank0.h5
-   ```
-
-See `transition_plan_cpp_ml.md` §3 Phase 7 for troubleshooting steps if divergence is found.
+Completed via `FLOW_DUMP_DEBUG` binary dumps from a 20-step MAIA run and the standalone `verify_inference.py` script. The step-15 "received" divergence from the old-code reference was traced to the HDF-safe scheduling computation — now fixed. The 19-test behavior unit suite validates the scheduling logic end-to-end.
 
 ---
 
