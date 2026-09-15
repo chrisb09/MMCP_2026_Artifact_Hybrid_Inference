@@ -67,10 +67,18 @@ git -C "${CPP_ML_DIR}" submodule update --init --recursive || true
 echo "Building external PhyDLL runtime..."
 bash "${CPP_ML_DIR}/build_phydll.sh"
 
-# Ensure libtorch symlink exists for CMI
-if [ ! -d "${CPP_ML_DIR}/extern/libtorch" ]; then
+torch_version="${TORCH_VERSION:-2.4.0}"
+
+# Ensure libtorch exists for CMI
+if [ ! -e "${CPP_ML_DIR}/extern/libtorch/lib/libtorch.so" ]; then
     echo "Creating libtorch symlink..."
-    ln -sfn /home/thes2181/libtorch "${CPP_ML_DIR}/extern/libtorch"
+    if [ -d "${REPO_DIR}/../smartsim/CPP-ML-Interface/extern/libtorch" ] && [ -f "${REPO_DIR}/../smartsim/CPP-ML-Interface/extern/libtorch/lib/libtorch.so" ]; then
+        ln -sfn "${REPO_DIR}/../smartsim/CPP-ML-Interface/extern/libtorch" "${CPP_ML_DIR}/extern/libtorch"
+    elif [ -d "/rwthfs/rz/cluster/hpcwork/ro092286/smartsim/CPP-ML-Interface/extern/libtorch" ]; then
+        ln -sfn "/rwthfs/rz/cluster/hpcwork/ro092286/smartsim/CPP-ML-Interface/extern/libtorch" "${CPP_ML_DIR}/extern/libtorch"
+    elif [ -d "/home/thes2181/libtorch" ] && [ -f "/home/thes2181/libtorch/lib/libtorch.so" ]; then
+        ln -sfn /home/thes2181/libtorch "${CPP_ML_DIR}/extern/libtorch"
+    fi
 fi
 
 NPROC="${SLURM_CPUS_ON_NODE:-96}"
@@ -94,7 +102,7 @@ cmake "${CPP_ML_DIR}" \
     -DAIX_USE_PREBUILT=OFF \
     -DAIX_SKIP_VENV_CREATION=ON \
     -DLIBTORCH_DIR="${CPP_ML_DIR}/extern/libtorch" \
-    -DTORCH_VERSION=2.6.0 \
+    -DTORCH_VERSION="${torch_version}" \
     -DBUILD_TESTS=OFF \
     -DBUILD_TESTING=OFF \
     -DCMAKE_CXX_FLAGS:STRING="-DFLOW_DUMP_DEBUG" \
@@ -179,7 +187,7 @@ cmake . \
     -DAIX_USE_PREBUILT=OFF \
     -DAIX_SKIP_VENV_CREATION=ON \
     -DLIBTORCH_DIR="${CPP_ML_DIR}/extern/libtorch" \
-    -DTORCH_VERSION=2.6.0 \
+    -DTORCH_VERSION="${torch_version}" \
     -DBUILD_TESTS=OFF \
     -DBUILD_TESTING=OFF \
     "${cmake_extra_scorep_args[@]}"
