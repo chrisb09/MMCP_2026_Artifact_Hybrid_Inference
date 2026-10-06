@@ -352,8 +352,19 @@ FvStructuredSolver<nDim>::FvStructuredSolver(MInt solverId, StructuredGrid<nDim>
       overrides.dotted["library.batch_size"] = static_cast<int64_t>(0);
     }
   } else {
-    overrides.dotted["library.app_comm"] = static_cast<void*>(&ml_comm);
+    // The registry takes the opaque MPI handle, not the address of its storage.
+    overrides.dotted["library.app_comm"] = static_cast<void*>(ml_comm);
     overrides.dotted["library.model_file"] = modelPath;
+    // AIX batches samples per device forward. The default of 1 makes the solver
+    // extremely slow; 50000 stays below the 2^16 limit where the TBL transformer
+    // becomes unstable. Override with MAIA_AIX_BATCHSIZE.
+    static const int64_t aixBatchSize = [] {
+      const char* value = std::getenv("MAIA_AIX_BATCHSIZE");
+      return (value != nullptr && std::atoi(value) > 0)
+                 ? static_cast<int64_t>(std::atoi(value))
+                 : static_cast<int64_t>(50000);
+    }();
+    overrides.dotted["library.batchsize"] = aixBatchSize;
   }
   
   // FIX: The ML Coupler is instantiated before the restart file is read, so
@@ -8438,11 +8449,28 @@ MBool FvStructuredSolver<nDim>::solutionStep() {
   RECORD_TIMER_START(m_timers[Timers::MainLoop]);
 
   MBool step = false;
-  
+
+  // Align solver ranks only; DL ranks do not participate in this communicator.
+  static const bool syncMLTiming = [] {
+    const char* value = std::getenv("MAIA_ML_STEP_TIMING_SYNC");
+    return value == nullptr || std::string(value) != "0";
+  }();
+  // Opt-in per-inference timing print. Emits the two-barrier ML region duration
+  // (entry barrier excluded, exit barrier included) as max/min across solver
+  // ranks, mirroring the terrain-solver STEP_TIMING line.
+  static const bool printMLStepTiming = [] {
+    const char* value = std::getenv("MAIA_ML_STEP_TIMING_PRINT");
+    return value != nullptr && std::string(value) == "1";
+  }();
+  if(syncMLTiming) {
+    MPI_Barrier(globalMaiaCommWorld(), AT_);
+  }
+  const auto mlStepBegin = std::chrono::steady_clock::now();
   RECORD_TIMER_START(m_timers[Timers::MLCoupling]);
 
   MLong totalCells = static_cast<MLong>(m_nCells[0]) * static_cast<MLong>(m_nCells[1]) * static_cast<MLong>(m_nCells[2]);
   int delta = 0;
+  const int inferenceStep = globalTimeStep;
   if (m_RKStep == 0) {
     // Copy solver double* U/V/W to float input buffers
     MFloat* src[3] = {
@@ -8504,7 +8532,28 @@ MBool FvStructuredSolver<nDim>::solutionStep() {
       lhsBnd();
     }
   }
+  if(syncMLTiming) {
+    MPI_Barrier(globalMaiaCommWorld(), AT_);
+  }
+  const auto mlStepEnd = std::chrono::steady_clock::now();
   RECORD_TIMER_STOP(m_timers[Timers::MLCoupling]);
+
+  if (delta > 0 && printMLStepTiming) {
+    const double localMs =
+      std::chrono::duration<double, std::milli>(mlStepEnd - mlStepBegin).count();
+    int solverRank = 0;
+    MPI_Comm_rank(globalMaiaCommWorld(), &solverRank);
+    double minMs = localMs;
+    double maxMs = localMs;
+    MPI_Reduce(&localMs, &minMs, 1, MPI_DOUBLE, MPI_MIN, 0, globalMaiaCommWorld());
+    MPI_Reduce(&localMs, &maxMs, 1, MPI_DOUBLE, MPI_MAX, 0, globalMaiaCommWorld());
+    if(solverRank == 0) {
+      std::cout << "ML_STEP_TIMING step=" << inferenceStep
+                << " ml_ms=" << maxMs
+                << " rank_min_ms=" << minMs
+                << " rank_max_ms=" << maxMs << std::endl;
+    }
+  }
 
   if (delta == 0) {
     rhs();
