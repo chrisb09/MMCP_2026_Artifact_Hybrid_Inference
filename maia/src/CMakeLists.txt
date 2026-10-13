@@ -162,7 +162,9 @@ endif()
 add_definitions("-DWITH_AIXSERVICE")
 add_definitions("-DWITH_ML_INTERFACE")
 
-add_definitions("-DWITH_SCOREP")
+if(WITH_SCOREP)
+  add_definitions("-DWITH_SCOREP")
+endif()
 
 # Enable debug functions via command line
 if(ENABLE_DEBUG_FUNCTION)

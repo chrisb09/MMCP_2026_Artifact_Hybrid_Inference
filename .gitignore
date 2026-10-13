@@ -1,3 +1,9 @@
 input/grid_les_medium.hdf5
 input/restart_les_init_medium.hdf5
 input/transformer_inference_scripted_fw2.pt
+
+# Build output logs
+logs/
+
+# Large experiment scratch data
+scratch/
