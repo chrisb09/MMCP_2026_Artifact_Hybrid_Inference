@@ -16,18 +16,39 @@ mem_file="${out_dir}/mem_${host}.txt"
 gpu_file="${out_dir}/gpu_${host}.txt"
 
 mem_peak=0
+proc_peak=0
 declare -A gpu_peak=()
 printf '0\n' > "${mem_file}"
 : > "${gpu_file}"
+proc_file="${out_dir}/gpuproc_${host}.txt"
+printf '0\n' > "${proc_file}"
+
+# Baseline: GPU memory present before our workload allocates anything. This
+# distinguishes our own growth from a co-tenant/leftover allocation.
+base_file="${out_dir}/gpubase_${host}.txt"
+if command -v nvidia-smi >/dev/null 2>&1; then
+    nvidia-smi --query-gpu=index,memory.used --format=csv,noheader,nounits 2>/dev/null \
+        | sed 's/, */ /' > "${base_file}" || true
+fi
 
 trap 'exit 0' TERM INT
 while true; do
-    used="$(awk '/^MemTotal:/{t=$2} /^MemAvailable:/{a=$2} END{if(t!="") print t-a}' /proc/meminfo 2>/dev/null)"
+    # /proc/meminfo reports kB; convert to MiB to match the nvidia-smi units.
+    used="$(awk '/^MemTotal:/{t=$2} /^MemAvailable:/{a=$2} END{if(t!="") print int((t-a)/1024)}' /proc/meminfo 2>/dev/null)"
     if [[ "${used}" =~ ^[0-9]+$ ]] && (( used > mem_peak )); then
         mem_peak="${used}"
         printf '%s\n' "${mem_peak}" > "${mem_file}"
     fi
     if command -v nvidia-smi >/dev/null 2>&1; then
+        # Number of processes holding a CUDA context on the GPUs (detects
+        # one-context-per-rank rather than one GPU controller).
+        nproc="$(nvidia-smi --query-compute-apps=pid --format=csv,noheader 2>/dev/null | grep -c . || true)"
+        if [[ "${nproc}" =~ ^[0-9]+$ ]] && (( nproc > proc_peak )); then
+            proc_peak="${nproc}"
+            printf '%s\n' "${proc_peak}" > "${proc_file}"
+            nvidia-smi --query-compute-apps=pid,process_name,used_memory \
+                --format=csv,noheader 2>/dev/null > "${out_dir}/gpuapps_${host}.txt" || true
+        fi
         while IFS=',' read -r idx val; do
             idx="${idx//[!0-9]/}"
             val="${val//[!0-9]/}"

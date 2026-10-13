@@ -23,6 +23,15 @@ if [[ "${local_rank}" == "0" && -n "${CMI_SAMPLER_SCRIPT:-}" && -x "${CMI_SAMPLE
     ( "${CMI_SAMPLER_SCRIPT}" "${CMI_SAMPLER_DIR}" "${CMI_SAMPLER_INTERVAL:-1}" >/dev/null 2>&1 & )
 fi
 
+# Optional per-rank binding evidence (one line per rank, per node).
+if [[ "${CMI_BIND_LOG:-0}" == "1" && -n "${CMI_SAMPLER_DIR:-}" ]]; then
+    bind_host="$(hostname -s 2>/dev/null || hostname)"
+    printf 'rank=%s local=%s mask=%s\n' \
+        "${SLURM_PROCID:-${OMPI_COMM_WORLD_RANK:-?}}" "${local_rank}" \
+        "$(taskset -pc $$ 2>/dev/null | sed 's/.*: //')" \
+        >> "${CMI_SAMPLER_DIR}/bind_${bind_host}.txt"
+fi
+
 # 2. Opt-in NUMA-aware pinning (default: rely on Slurm --cpu-bind=cores).
 if [[ "${CMI_NUMA_PIN:-0}" == "1" && -n "${CMI_NUMA_PIN_SCRIPT:-}" ]]; then
     pin_args=(python3 "${CMI_NUMA_PIN_SCRIPT}")

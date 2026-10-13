@@ -28,6 +28,9 @@ STEP_RE = re.compile(r"ML_STEP_TIMING step=(\d+) ml_ms=([0-9.]+)")
 WORKLOAD_RE = re.compile(
     r"ML_WORKLOAD_LOG cubes_per_rank=(\d+) samples_per_rank=(\d+) "
     r"cubes_aggregate=(\d+) samples_aggregate=(\d+)")
+AIXMEM_RE = re.compile(
+    r"AIX_GPU_MEM device=(\d+) batch_dim=(-?\d+) batchsize=(\d+) "
+    r"num_batches=(\d+) used_mib=(\d+) total_mib=(\d+) call=(\d+)")
 WARMUP_CALLS = 2
 
 
@@ -112,8 +115,19 @@ def parse_run(run_dir: str) -> dict[str, object] | None:
                     workload = dict(zip(workload.keys(), m.groups()))
     except OSError:
         pass
+    aixmem = []
+    try:
+        with open(log, errors="replace") as fh:
+            for line in fh:
+                m = AIXMEM_RE.search(line)
+                if m:
+                    aixmem.append(m.groups())
+    except OSError:
+        pass
     evidence = glob.glob(os.path.join(run_dir, "aix_gpu_diagnostics", "aix_rank_*.csv"))
     node_ram, gpu_vram = node_peaks(info)
+    proc_peaks = [int(v) for k, v in info.items()
+                  if k.startswith("GPU_PROC_PEAK_") and v.isdigit()]
     batch_host = info.get("BATCH_HOST", "")
     ml_host = info.get("HET_GPU_NODELIST", batch_host)
     ml_host = ml_host.split(",")[0].split()[0] if ml_host else batch_host
@@ -128,6 +142,12 @@ def parse_run(run_dir: str) -> dict[str, object] | None:
         "solver_node_ram_peak_gb": _mib_to_gb(solver_mib),
         "ml_node_ram_peak_gb": _mib_to_gb(ml_mib),
         "gpu_vram_peak_gb": f"{gpu_peak / 1024.0:.2f}" if gpu_peak else "",
+        "gpu_proc_peak": str(max(proc_peaks)) if proc_peaks else "",
+        "aix_gpu_used_mib_first": aixmem[0][4] if aixmem else "",
+        "aix_gpu_used_mib_max": str(max(int(r[4]) for r in aixmem)) if aixmem else "",
+        "aix_gpu_batch_dim": aixmem[0][1] if aixmem else "",
+        "aix_gpu_batchsize": aixmem[0][2] if aixmem else "",
+        "aix_gpu_num_batches": aixmem[0][3] if aixmem else "",
         "gpu_vram_per_gpu_mib": ";".join(f"{k}={v}" for k, v in sorted(ml_gpus.items())),
         "node_ram_peaks_mib": ";".join(f"{k}={v}" for k, v in sorted(node_ram.items())),
         "run_dir": run_dir,

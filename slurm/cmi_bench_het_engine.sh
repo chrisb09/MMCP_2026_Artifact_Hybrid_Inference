@@ -94,6 +94,7 @@ export TMPDIR="${run_dir}/tmp"
 export CMI_SAMPLER_SCRIPT="${project_dir}/slurm/cmi_node_sampler.sh"
 export CMI_SAMPLER_DIR="${run_dir}"
 export CMI_NUMA_PIN_SCRIPT="${project_dir}/slurm/cmi_numa_pin.py"
+export CMI_BIND_LOG="${CMI_BIND_LOG:-1}"
 ln -s "${project_dir}/input" input
 ln -s "${project_dir}/input/grid_les_medium.hdf5" grid_les_medium.hdf5
 cp --reflink=auto "${project_dir}/input/restart_les_init_medium.hdf5" out/restart_les_ref_medium.hdf5
@@ -188,6 +189,26 @@ collect_peaks() {
             [[ -n "${idx}" && -n "${peak}" ]] || continue
             printf 'GPU_VRAM_PEAK_MIB_%s_gpu%s=%s\n' "${host}" "${idx}" "${peak}" >> run.info
         done < "${f}"
+    done
+    for f in "${run_dir}"/bind_*.txt; do
+        [[ -r "${f}" ]] || continue
+        host="$(basename "${f}" .txt)"; host="${host#bind_}"
+        ranks="$(wc -l < "${f}")"
+        masks="$(sed -E 's/.*mask=//' "${f}" | sort -u | wc -l)"
+        printf 'BIND_HOST_%s_ranks=%s\nBIND_HOST_%s_distinct_masks=%s\n' "${host}" "${ranks}" "${host}" "${masks}" >> run.info
+    done
+    for f in "${run_dir}"/gpubase_*.txt; do
+        [[ -r "${f}" ]] || continue
+        host="$(basename "${f}" .txt)"; host="${host#gpubase_}"
+        while read -r idx base; do
+            [[ -n "${idx}" && -n "${base}" ]] || continue
+            printf 'GPU_VRAM_BASE_MIB_%s_gpu%s=%s\n' "${host}" "${idx}" "${base}" >> run.info
+        done < "${f}"
+    done
+    for f in "${run_dir}"/gpuproc_*.txt; do
+        [[ -r "${f}" ]] || continue
+        host="$(basename "${f}" .txt)"; host="${host#gpuproc_}"
+        printf 'GPU_PROC_PEAK_%s=%s\n' "${host}" "$(cat "${f}" 2>/dev/null || echo 0)" >> run.info
     done
 }
 cleanup() {
