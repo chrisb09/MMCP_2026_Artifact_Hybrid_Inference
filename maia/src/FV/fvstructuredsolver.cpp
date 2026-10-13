@@ -340,14 +340,31 @@ FvStructuredSolver<nDim>::FvStructuredSolver(MInt solverId, StructuredGrid<nDim>
     overrides.dotted["library.model_path"] = modelPath;
     overrides.dotted["library.model_name"] = std::string("model");
     if(cpp_ml_device == "GPU") {
-      overrides.dotted["library.num_gpus"] = static_cast<int64_t>(1);
+      // Number of GPUs RedisAI should register. Default 1 (validated smoke);
+      // override with MAIA_SMARTSIM_NUM_GPUS for multi-GPU benchmark cells.
+      static const int64_t smartsimNumGpus = [] {
+        const char* value = std::getenv("MAIA_SMARTSIM_NUM_GPUS");
+        return (value != nullptr && std::atoi(value) > 0)
+                   ? static_cast<int64_t>(std::atoi(value))
+                   : static_cast<int64_t>(1);
+      }();
+      overrides.dotted["library.num_gpus"] = smartsimNumGpus;
     }
   } else if(cpp_ml_provider == "PHYDLL") {
     overrides.dotted["library.model_file"] = modelPath;
     overrides.dotted["library.backend"] = std::string("TORCH");
     overrides.dotted["library.device"] = cpp_ml_device;
     if(cpp_ml_device == "GPU") {
-      overrides.dotted["library.batch_size"] = static_cast<int64_t>(2048);
+      // Per-DL-client forward sub-batch cap. Default 2048; override with
+      // MAIA_PHYDLL_BATCHSIZE so model-specific caps (large for the MLP) can be
+      // benchmarked without a rebuild.
+      static const int64_t phydllBatchSize = [] {
+        const char* value = std::getenv("MAIA_PHYDLL_BATCHSIZE");
+        return (value != nullptr && std::atoi(value) > 0)
+                   ? static_cast<int64_t>(std::atoi(value))
+                   : static_cast<int64_t>(2048);
+      }();
+      overrides.dotted["library.batch_size"] = phydllBatchSize;
     } else {
       overrides.dotted["library.batch_size"] = static_cast<int64_t>(0);
     }
@@ -406,6 +423,51 @@ FvStructuredSolver<nDim>::FvStructuredSolver(MInt solverId, StructuredGrid<nDim>
            std::array<int, 9>{mlInterval, mlInputSeqLen, hdfOutputInterval,
             mlStepCoeff, mlForecastWindow, static_cast<MInt>(mlScalingFactor),
             mlInputStepDistance, mlCubeOverlap, mlCubeD});
+
+  // Workload metadata: replicate the flow-extrapolator cube tiling so the ML
+  // workload (cubes/samples per rank and aggregate) is recorded for every run.
+  // This runs once at setup, outside the timed ML region. Disable with
+  // MAIA_ML_WORKLOAD_LOG=0.
+  static const bool logMLWorkload = [] {
+    const char* value = std::getenv("MAIA_ML_WORKLOAD_LOG");
+    return value == nullptr || std::string(value) != "0";
+  }();
+  if (logMLWorkload) {
+    auto axis_cubes = [](long long length, long long cubeD, long long overlap) -> long long {
+      if (cubeD <= 0 || length < cubeD) {
+        return 0;
+      }
+      if (overlap == 0) {
+        return static_cast<long long>(
+            std::ceil(static_cast<double>(length) / static_cast<double>(cubeD)));
+      }
+      const long long step = cubeD - overlap;
+      long long count = (length - cubeD) / step + 1;
+      if ((length - cubeD) % step != 0) {
+        count += 1;
+      }
+      return count;
+    };
+    long long cubes = 1;
+    for (int axis = 0; axis < 3; ++axis) {
+      const long long active = static_cast<long long>(m_nCells[axis]) - 2LL * m_noGhostLayers;
+      cubes *= axis_cubes(active, mlCubeD, mlCubeOverlap);
+    }
+    const long long samples = 3LL * cubes;
+    long long cubesAgg = 0;
+    long long samplesAgg = 0;
+    MPI_Allreduce(&cubes, &cubesAgg, 1, MPI_LONG_LONG, MPI_SUM, ml_comm);
+    MPI_Allreduce(&samples, &samplesAgg, 1, MPI_LONG_LONG, MPI_SUM, ml_comm);
+    if (domainId() == 0) {
+      std::cout << "ML_WORKLOAD_LOG cubes_per_rank=" << cubes
+                << " samples_per_rank=" << samples
+                << " cubes_aggregate=" << cubesAgg
+                << " samples_aggregate=" << samplesAgg
+                << " cubeD=" << mlCubeD
+                << " overlap=" << mlCubeOverlap
+                << " solver_ranks=" << noDomains() << std::endl;
+    }
+  }
   snapshot::init();
 
   RECORD_TIMER_STOP(m_timers[Timers::Setup]);

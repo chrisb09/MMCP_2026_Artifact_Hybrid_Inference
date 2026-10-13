@@ -1,29 +1,34 @@
 #!/usr/bin/env bash
-# Pin the calling MPI rank to a core from the Slurm allocation's allowed set.
-# Ranks are assigned round-robin so oversubscribed DL ranks share solver cores.
-# Affinity is derived from the cgroup cpuset, not hardcoded core numbers.
+# Rank wrapper for MAIA coupling runs.
+#
+# Slurm now binds solver ranks (--cpu-bind=cores). This wrapper handles only what
+# Slurm cannot:
+#   1. per-rank GPU hiding on the surrogate CPU-side het group,
+#   2. an opt-in NUMA-aware physical-core pin (CMI_NUMA_PIN=1),
+#   3. launching the per-node memory sampler once per node (local rank 0).
+#
+# Usage: pin_cmi_rank.sh <command> [args...]
 set -u
-rank="${OMPI_COMM_WORLD_RANK:-${SLURM_PROCID:-${PMI_RANK:-0}}}"
-allowed="$(taskset -pc $$ 2>/dev/null | sed 's/.*: //')"
-[[ -n "${allowed}" ]] || allowed="0"
 
-cpus=()
-IFS=',' read -ra parts <<< "${allowed}"
-for part in "${parts[@]}"; do
-    if [[ "${part}" == *-* ]]; then
-        lo="${part%-*}"
-        hi="${part#*-}"
-        for ((c = lo; c <= hi; ++c)); do
-            cpus+=("${c}")
-        done
-    else
-        cpus+=("${part}")
-    fi
-done
-count="${#cpus[@]}"
-target="${cpus[$((rank % count))]}"
-taskset -p -c "${target}" $$ >/dev/null 2>&1 || true
-if [[ "${CMI_PIN_VERBOSE:-0}" == "1" ]]; then
-    printf '[CMI_PIN] rank=%s target_core=%s allowed=%s\n' "${rank}" "${target}" "${allowed}" >&2
+# 1. GPU hiding. Slurm rewrites CUDA_VISIBLE_DEVICES per task after --export,
+# so this must happen here, inside the rank.
+if [[ "${HET_SURROGATE_HIDE_GPU:-0}" == "1" ]]; then
+    export CUDA_VISIBLE_DEVICES="NoDevFiles"
 fi
+
+local_rank="${SLURM_LOCALID:-${OMPI_COMM_WORLD_LOCAL_RANK:-0}}"
+
+# 3. One resource sampler per node (covers both het nodes).
+if [[ "${local_rank}" == "0" && -n "${CMI_SAMPLER_SCRIPT:-}" && -x "${CMI_SAMPLER_SCRIPT}" && -n "${CMI_SAMPLER_DIR:-}" ]]; then
+    ( "${CMI_SAMPLER_SCRIPT}" "${CMI_SAMPLER_DIR}" "${CMI_SAMPLER_INTERVAL:-1}" >/dev/null 2>&1 & )
+fi
+
+# 2. Opt-in NUMA-aware pinning (default: rely on Slurm --cpu-bind=cores).
+if [[ "${CMI_NUMA_PIN:-0}" == "1" && -n "${CMI_NUMA_PIN_SCRIPT:-}" ]]; then
+    pin_args=(python3 "${CMI_NUMA_PIN_SCRIPT}")
+    [[ -n "${CMI_NUMA_PIN_BUDGET:-}" ]] && pin_args+=(--budget "${CMI_NUMA_PIN_BUDGET}")
+    pin_args+=(-- "$@")
+    exec "${pin_args[@]}"
+fi
+
 exec "$@"

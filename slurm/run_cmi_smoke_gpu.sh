@@ -41,6 +41,17 @@ for value in "${run_steps}" "${timeout_s}" "${ready_s}" "${np_solver}" "${np_dl}
 done
 (( run_steps >= 51 )) || { printf 'RUN_STEPS must be >=51 to reach the second inference.\n' >&2; exit 2; }
 
+# Pilot/benchmark knobs. Defaults preserve the functional smoke behaviour.
+ml_model_file="${PILOT_MODEL_FILE:-./input/transformer_inference_scripted_fw2.pt}"
+ml_cube_overlap="${ML_CUBE_OVERLAP:-0}"
+[[ "${ml_cube_overlap}" =~ ^[0-9]+$ ]] || { printf 'ML_CUBE_OVERLAP must be a non-negative integer.\n' >&2; exit 2; }
+(( ml_cube_overlap < 8 )) || { printf 'ML_CUBE_OVERLAP must be < mlCubeD (8).\n' >&2; exit 2; }
+# Periodic solution output also drives the inference scheduler. A large value
+# gives a compact schedule: with ML_CUBE_OVERLAP=0 and RUN_STEPS=200 the run
+# yields 7 inference calls (warmups at 15/44, measured at 73/102/131/160/189).
+solution_interval="${SOLUTION_INTERVAL:-50}"
+[[ "${solution_interval}" =~ ^[0-9]+$ ]] || { printf 'SOLUTION_INTERVAL must be a non-negative integer.\n' >&2; exit 2; }
+
 tasks="${np_solver}"
 [[ "${provider}" != PHYDLL ]] || tasks=$((np_solver + np_dl))
 maia_build_dir="$(realpath "${MAIA_BUILD_DIR:-${project_dir}/maia/build_gnu_production}")"
@@ -51,6 +62,15 @@ source "${project_dir}/setup_env_claix23.sh"
 cuda_lib=/cvmfs/software.hpc.rwth.de/Linux/RH9/x86_64/intel/sapphirerapids/software/CUDA/12.4.0/targets/x86_64-linux/lib
 export LD_LIBRARY_PATH="${maia_build_dir}/lib:${project_dir}/CPP-ML-Interface/extern/phydll/build/lib:${cuda_lib}:${LD_LIBRARY_PATH:-}"
 
+# Runtime AIX distribution-layout selection. The affine/NUMA prebuilts share the
+# same soname and commit as the default, and MAIA uses RUNPATH (which yields to
+# LD_LIBRARY_PATH), so prepending the variant lib dir swaps the layout without a
+# separate MAIA build.
+if [[ -n "${AIX_LAYOUT_LIB:-}" ]]; then
+    [[ -f "${AIX_LAYOUT_LIB}/libAIxeleratorService.so" ]] || { printf 'AIX_LAYOUT_LIB has no libAIxeleratorService.so: %s\n' "${AIX_LAYOUT_LIB}" >&2; exit 1; }
+    export LD_LIBRARY_PATH="${AIX_LAYOUT_LIB}:${LD_LIBRARY_PATH}"
+fi
+
 # Preserve Slurm's allocation-aware GPU mask: never clear CUDA_VISIBLE_DEVICES here.
 export CPP_ML_INTERFACE_PROVIDER_ENV="${provider}"
 export CPP_ML_INTERFACE_DEVICE=GPU
@@ -58,10 +78,17 @@ export OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 NUMEXPR_NUM_TH
 export MLCOUPLING_INTRA_OP_THREADS=1 MLCOUPLING_INTER_OP_THREADS=1
 export MAIA_ML_STEP_TIMING_SYNC="${MAIA_ML_STEP_TIMING_SYNC:-1}"
 [[ "${smoke_case}" != aix-sync-off ]] || export MAIA_ML_STEP_TIMING_SYNC=0
+if [[ "${ML_STEP_TIMING_PRINT:-0}" == 1 ]]; then
+    export MAIA_ML_STEP_TIMING_PRINT=1
+fi
 # Number of DL fields for auto/uniform transport (five input, two output frames).
 export PHYDLL_DL_COUNT=2 PHYDLL_DL_FIELD_COUNT=2
 export OMPI_MCA_pmix="^s1,s2"
 unset OMPI_MCA_ess
+# Defensive: exclude UCX's CMA transport, which aborts with "Bad address" on
+# very large intra-node transfers. This does not change OpenMPI's PML and does
+# NOT fix invalid (overflowed) gather displacements; the workload size does.
+export UCX_TLS="${UCX_TLS:-^cma}"
 export SCOREP_ENABLE_TRACING=false SCOREP_ENABLE_PROFILING=false
 unset FLOW_DEBUG_DUMP_DIR MAIA_SNAPSHOT_DIR MLCOUPLING_DEBUG_EXPORT
 unset MLCOUPLING_DEBUG_ALL_RANKS MLCOUPLING_DEBUG_EXPORT_DIR MLCOUPLING_DEBUG_RANK
@@ -78,6 +105,10 @@ run_dir="$(mktemp -d "${scratch_root}/${smoke_case}_gpu_${SLURM_JOB_ID}_XXXXXX")
 cd "${run_dir}"
 mkdir out auxdata boxes planes tmp
 export TMPDIR="${run_dir}/tmp"
+# Per-node resource sampler + opt-in NUMA pinner, wired into the rank wrapper.
+export CMI_SAMPLER_SCRIPT="${project_dir}/slurm/cmi_node_sampler.sh"
+export CMI_SAMPLER_DIR="${run_dir}"
+export CMI_NUMA_PIN_SCRIPT="${project_dir}/slurm/cmi_numa_pin.py"
 if [[ "${provider}" == AIX ]]; then
     # Capture CUDA execution evidence; GPU visibility alone does not prove use.
     if [[ "${aix_comm}" == pipelined ]]; then
@@ -98,7 +129,10 @@ sed -i \
     -e 's/^mlStepCoefficient *=.*/mlStepCoefficient = 12/' \
     -e 's/^mlForecastWindow *=.*/mlForecastWindow = 2/' \
     -e 's/^mlScalingFactor *=.*/mlScalingFactor = 1/' \
-    -e 's/^mlInputStepDistance *=.*/mlInputStepDistance = 1/' properties.toml
+    -e 's/^mlInputStepDistance *=.*/mlInputStepDistance = 1/' \
+    -e "s|^modelPath *=.*|modelPath = \"${ml_model_file}\"|" \
+    -e "s/^mlCubeOverlap *=.*/mlCubeOverlap = ${ml_cube_overlap}/" \
+    -e "s/^solutionInterval *=.*/solutionInterval = ${solution_interval}/" properties.toml
 model_path="$(python3 -c 'import tomllib; print(tomllib.load(open("properties.toml", "rb"))["modelPath"])')"
 [[ -r "${model_path}" ]] || { printf 'Input model not readable: %s\n' "${model_path}" >&2; exit 1; }
 
@@ -130,13 +164,44 @@ fi
     printf 'DL_RANKS=%s\n' "$((tasks - np_solver))"
     printf 'AIX_COMM=%s\n' "${aix_comm}"
     printf 'AIX_CREDITS=%s\n' "${aix_credits:-unset}"
+    printf 'AIX_LAYOUT_LIB=%s\n' "${AIX_LAYOUT_LIB:-default}"
     printf 'MAIA_ML_STEP_TIMING_SYNC=%s\n' "${MAIA_ML_STEP_TIMING_SYNC}"
+    printf 'MAIA_ML_STEP_TIMING_PRINT=%s\n' "${MAIA_ML_STEP_TIMING_PRINT:-0}"
+    printf 'ML_CUBE_OVERLAP=%s\n' "${ml_cube_overlap}"
+    printf 'SOLUTION_INTERVAL=%s\n' "${solution_interval}"
+    printf 'MAIA_AIX_BATCHSIZE=%s\n' "${MAIA_AIX_BATCHSIZE:-default}"
+    printf 'MAIA_PHYDLL_BATCHSIZE=%s\n' "${MAIA_PHYDLL_BATCHSIZE:-default}"
+    printf 'MAIA_SMARTSIM_NUM_GPUS=%s\n' "${MAIA_SMARTSIM_NUM_GPUS:-default}"
+    printf 'MAIA_ML_WORKLOAD_LOG=%s\n' "${MAIA_ML_WORKLOAD_LOG:-default}"
+    printf 'DEBUG_EXPORT=%s\n' "${DEBUG_EXPORT:-0}"
     printf 'SLURM_CPUS_ON_NODE=%s\n' "${SLURM_CPUS_ON_NODE:-unknown}"
+    printf 'SLURM_JOB_GPUS=%s\n' "${SLURM_JOB_GPUS:-${GPU_DEVICE_ORDINAL:-unknown}}"
+    printf 'BATCH_HOST=%s\n' "$(hostname -s 2>/dev/null || hostname)"
 } | tee run.info
 
 # Confirm the allocated GPU is actually visible before inference.
 nvidia-smi -L > gpu_list.log 2>&1 || true
 printf 'CUDA_VISIBLE_DEVICES=%s\n' "${CUDA_VISIBLE_DEVICES:-unset}" >> run.info
+
+# Fold the per-node sampler peaks (written by cmi_node_sampler.sh) into run.info.
+collect_peaks() {
+    local f host mib idx peak
+    for f in "${run_dir}"/mem_*.txt; do
+        [[ -r "${f}" ]] || continue
+        host="$(basename "${f}" .txt)"; host="${host#mem_}"
+        mib="$(cat "${f}" 2>/dev/null || echo 0)"
+        [[ "${mib}" =~ ^[0-9]+$ ]] || mib=0
+        printf 'NODE_RAM_PEAK_MIB_%s=%s\n' "${host}" "${mib}" >> run.info
+    done
+    for f in "${run_dir}"/gpu_*.txt; do
+        [[ -r "${f}" ]] || continue
+        host="$(basename "${f}" .txt)"; host="${host#gpu_}"
+        while read -r idx peak; do
+            [[ -n "${idx}" && -n "${peak}" ]] || continue
+            printf 'GPU_VRAM_PEAK_MIB_%s_gpu%s=%s\n' "${host}" "${idx}" "${peak}" >> run.info
+        done < "${f}"
+    done
+}
 
 controller_pid=""
 cleanup() {
@@ -156,6 +221,7 @@ cleanup() {
         wait "${controller_pid}" 2>/dev/null || true
     fi
     printf 'EXIT_STATUS=%s\n' "${status}" >> run.info
+    collect_peaks
     printf 'Preserved smoke artifacts: %s\n' "${run_dir}"
     exit "${status}"
 }
@@ -164,10 +230,16 @@ trap 'exit 130' INT
 trap 'exit 143' TERM
 
 pin="${project_dir}/slurm/pin_cmi_rank.sh"
-# Oversubscribe inside the allocation: more ranks than allocated cores, with
-# explicit per-rank affinity instead of Slurm's 1:1 binding.
-solver_cmd=(srun --label --mpi=pmix --nodes=1 --ntasks="${tasks}" --overcommit
-    --cpu-bind=none --kill-on-bad-exit=1)
+if [[ "${provider}" == PHYDLL ]]; then
+    # PhyDLL: the DL client is oversubscribed and unbound, matching the terrain
+    # solver's `mpirun --bind-to none` semantics.
+    solver_cmd=(srun --label --mpi=pmix --nodes=1 --ntasks="${tasks}" --overcommit
+        --cpu-bind=none --kill-on-bad-exit=1)
+else
+    # AIX/SmartSim: one solver rank per physical core, NUMA-ordered.
+    solver_cmd=(srun --label --mpi=pmix --nodes=1 --ntasks="${tasks}"
+        --cpu-bind=cores --distribution=block --kill-on-bad-exit=1)
+fi
 
 if [[ "${provider}" == PHYDLL ]]; then
     # The site's 5-second exit grace can kill the GPU client during teardown.
@@ -191,8 +263,8 @@ elif [[ "${provider}" == SMARTSIM ]]; then
     export SR_LOG_LEVEL=INFO SR_LOG_FILE="${run_dir}/smartredis.log"
     timeout --signal=TERM --kill-after=10 "$((timeout_s + ready_s + 60))s" \
         python3 "${project_dir}/CPP-ML-Interface/dl_clients/smartsim_controller.py" \
-        --launcher local --interface lo --db-nodes 1 --auto-port --use-gpu \
-        --intra-op-threads 4 --inter-op-threads 1 --threads-per-queue 4 \
+        --launcher local --interface lo --db-nodes "${SMARTSIM_DB_NODES:-1}" --auto-port --use-gpu \
+        --intra-op-threads 4 --inter-op-threads 1 --threads-per-queue "${SMARTSIM_TPQ:-4}" \
         --cpu-cores-per-node "${np_solver}" --timeout-s "${ready_s}" \
         --endpoint-file .ssdb_endpoint --done-file .solver_done --exp-dir ./ssdb_exp \
         > controller.log 2>&1 &

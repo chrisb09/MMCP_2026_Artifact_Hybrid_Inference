@@ -1,0 +1,2 @@
+compact-transformer-ov0,0,50000,4888397
+compact-mlp-ov6,6,1000000,4888398
