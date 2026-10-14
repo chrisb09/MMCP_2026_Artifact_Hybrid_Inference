@@ -42,3 +42,5 @@ phydll_py_venv/
 rebuild_debug_*.txt
 ssdb_exp/
 analysis/direct_torch_runs/
+__pycache__/
+*.pyc
