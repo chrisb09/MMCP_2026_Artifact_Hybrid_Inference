@@ -3,7 +3,7 @@
 # Both het components are c23g nodes; the CPU-side component hides its GPUs.
 #SBATCH --job-name=cmi-bench-het24p24c1g
 #SBATCH --account=rwth0792
-#SBATCH --time=01:00:00
+#SBATCH --time=00:20:00
 #SBATCH --exclusive
 #SBATCH --output=logs/cmi-bench-het24p24c1g_%j.out
 #SBATCH --error=logs/cmi-bench-het24p24c1g_%j.err

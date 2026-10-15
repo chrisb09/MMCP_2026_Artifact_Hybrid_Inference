@@ -6,7 +6,7 @@
 #SBATCH --cpus-per-task=1
 #SBATCH --gres=gpu:1
 #SBATCH --mem=120G
-#SBATCH --time=01:00:00
+#SBATCH --time=00:15:00
 #SBATCH --job-name=cmi-gpu-smoke
 #SBATCH --output=logs/cmi-gpu-smoke_%j.out
 #SBATCH --error=logs/cmi-gpu-smoke_%j.err
@@ -67,8 +67,10 @@ export LD_LIBRARY_PATH="${maia_build_dir}/lib:${project_dir}/CPP-ML-Interface/ex
 # LD_LIBRARY_PATH), so prepending the variant lib dir swaps the layout without a
 # separate MAIA build.
 if [[ -n "${AIX_LAYOUT_LIB:-}" ]]; then
-    [[ -f "${AIX_LAYOUT_LIB}/libAIxeleratorService.so" ]] || { printf 'AIX_LAYOUT_LIB has no libAIxeleratorService.so: %s\n' "${AIX_LAYOUT_LIB}" >&2; exit 1; }
-    export LD_LIBRARY_PATH="${AIX_LAYOUT_LIB}:${LD_LIBRARY_PATH}"
+    aix_layout_libdir="${AIX_LAYOUT_LIB}"
+    [[ -f "${aix_layout_libdir}/libAIxeleratorService.so" ]] || aix_layout_libdir="${AIX_LAYOUT_LIB}/lib"
+    [[ -f "${aix_layout_libdir}/libAIxeleratorService.so" ]] || { printf 'AIX_LAYOUT_LIB has no libAIxeleratorService.so: %s\n' "${AIX_LAYOUT_LIB}" >&2; exit 1; }
+    export LD_LIBRARY_PATH="${aix_layout_libdir}:${LD_LIBRARY_PATH}"
 fi
 
 # Preserve Slurm's allocation-aware GPU mask: never clear CUDA_VISIBLE_DEVICES here.
@@ -157,6 +159,8 @@ fi
 
 {
     printf 'CASE=%s\n' "${smoke_case}"
+    printf 'CELL=%s\n' "${CELL_NAME:-${smoke_case}}"
+    printf 'REP=%s\n' "${REP:-}"
     printf 'RUN_DIR=%s\n' "${run_dir}"
     printf 'MAIA=%s\n' "${maia}"
     printf 'MODEL=%s\n' "${model_path}"

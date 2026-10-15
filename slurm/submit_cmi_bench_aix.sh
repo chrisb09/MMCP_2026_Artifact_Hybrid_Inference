@@ -45,7 +45,7 @@ submit_single() {
     local jid
     jid="$(sbatch --parsable \
         --partition=c23g --account=rwth0792 --gres="gpu:${gres}" --exclusive --mem=0 \
-        --nodes=1 --ntasks="${ntasks}" --cpus-per-task=1 --time=01:00:00 \
+        --nodes=1 --ntasks="${ntasks}" --cpus-per-task=1 --time=00:15:00 \
         --job-name="cmi-${cell}" \
         --output="${root}/logs/cmi-${cell}_%j.out" --error="${root}/logs/cmi-${cell}_%j.err" \
         --export="ALL,PILOT_MODEL_FILE=$(model_file "${model}"),ML_CUBE_OVERLAP=$(model_overlap "${model}"),MAIA_AIX_BATCHSIZE=$(model_batch "${model}"),RUN_STEPS=${STEPS},SOLUTION_INTERVAL=10000,ML_STEP_TIMING_PRINT=1,DEBUG_EXPORT=0,AIX_LAYOUT_LIB=$(layout_lib "${layout}"),NP_SOLVER=${ntasks}" \

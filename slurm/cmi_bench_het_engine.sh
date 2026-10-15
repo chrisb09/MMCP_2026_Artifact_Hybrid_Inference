@@ -55,8 +55,10 @@ export LD_LIBRARY_PATH="${maia_build_dir}/lib:${project_dir}/CPP-ML-Interface/ex
 
 # Runtime AIX distribution-layout selection (RUNPATH yields to LD_LIBRARY_PATH).
 if [[ -n "${AIX_LAYOUT_LIB:-}" ]]; then
-    [[ -f "${AIX_LAYOUT_LIB}/libAIxeleratorService.so" ]] || { printf 'AIX_LAYOUT_LIB has no libAIxeleratorService.so: %s\n' "${AIX_LAYOUT_LIB}" >&2; exit 1; }
-    export LD_LIBRARY_PATH="${AIX_LAYOUT_LIB}:${LD_LIBRARY_PATH}"
+    aix_layout_libdir="${AIX_LAYOUT_LIB}"
+    [[ -f "${aix_layout_libdir}/libAIxeleratorService.so" ]] || aix_layout_libdir="${AIX_LAYOUT_LIB}/lib"
+    [[ -f "${aix_layout_libdir}/libAIxeleratorService.so" ]] || { printf 'AIX_LAYOUT_LIB has no libAIxeleratorService.so: %s\n' "${AIX_LAYOUT_LIB}" >&2; exit 1; }
+    export LD_LIBRARY_PATH="${aix_layout_libdir}:${LD_LIBRARY_PATH}"
 fi
 
 export CPP_ML_INTERFACE_PROVIDER_ENV="${provider}"
@@ -141,6 +143,7 @@ fi
 
 {
     printf 'CELL=%s\n' "${cell}"
+    printf 'REP=%s\n' "${REP:-}"
     printf 'RUN_DIR=%s\n' "${run_dir}"
     printf 'MAIA=%s\n' "${maia}"
     printf 'MODEL=%s\n' "${model_path}"

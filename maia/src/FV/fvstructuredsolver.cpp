@@ -415,6 +415,9 @@ FvStructuredSolver<nDim>::FvStructuredSolver(MInt solverId, StructuredGrid<nDim>
    // Create the MLCoupling instance via config file
    m_mlCoupler.reset(MLCoupling<float, MFloat, float, float>::create_from_config(
       cpp_ml_config_file(cpp_ml_provider), std::move(input_data), std::move(output_data), overrides));
+#ifdef WITH_SCOREP
+   m_mlCoupler->set_scorep_warmup_inference_count(2);
+#endif
 
   log_init<9>("Setting up ML Coupler (new CMI)",
            std::array<std::string, 9>{"mlInterval", "mlInputLength", "solutionInterval",
