@@ -1,0 +1,12 @@
+aix-96c4g-default-coll-transformer-r2,0
+aix-96c4g-default-p2p1-transformer-r2,0
+aix-96c4g-default-p2pfull-transformer-r2,0
+aix-96c4g-affine-coll-transformer-r2,0
+aix-96c4g-affine-p2p1-transformer-r2,0
+aix-96c4g-affine-p2pfull-transformer-r2,0
+aix-96c4g-numa-coll-transformer-r2,0
+aix-96c4g-numa-p2p1-transformer-r2,0
+aix-96c4g-numa-p2pfull-transformer-r2,0
+phydll-96c4g-default-transformer-r2,0
+phydll-96c4g-readiness-transformer-r2,0
+smartsim-96c4g-shared-transformer-r2,0

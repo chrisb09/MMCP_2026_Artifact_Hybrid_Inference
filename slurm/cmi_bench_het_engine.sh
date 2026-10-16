@@ -91,6 +91,13 @@ cell="${CELL_NAME:-het_${cpu_tasks}p${gpu_tasks}c${gpus}g_${aix_comm}}"
 run_dir="$(mktemp -d "${scratch_root}/${cell}_${SLURM_JOB_ID}_XXXXXX")"
 cd "${run_dir}"
 mkdir out auxdata boxes planes tmp
+# These benchmark files are disposable; keep text diagnostics on every exit.
+cleanup_hdf5() {
+    if [[ "${KEEP_BENCH_HDF5:-0}" != 1 ]]; then
+        rm -f -- "${run_dir}"/out/*.hdf5 "${run_dir}"/out/*.h5
+    fi
+}
+trap cleanup_hdf5 EXIT
 export TMPDIR="${run_dir}/tmp"
 # Per-node resource sampler + opt-in NUMA pinner, wired into the rank wrapper.
 export CMI_SAMPLER_SCRIPT="${project_dir}/slurm/cmi_node_sampler.sh"
@@ -223,6 +230,7 @@ cleanup() {
     fi
     collect_peaks
     printf 'EXIT_STATUS=%s\n' "${status}" >> run.info
+    cleanup_hdf5
     printf 'Preserved bench artifacts: %s\n' "${run_dir}"
     exit "${status}"
 }
@@ -230,7 +238,8 @@ trap cleanup EXIT
 
 pin="${project_dir}/slurm/pin_cmi_rank.sh"
 if [[ "${provider}" == AIX ]]; then
-    solver_cmd=(srun --label --mpi=pmix --cpu-bind=cores --distribution=block --kill-on-bad-exit=1
+    # Allow asymmetric rank teardown; the outer timeout still bounds hangs.
+    solver_cmd=(srun --label --mpi=pmix --cpu-bind=cores --distribution=block --kill-on-bad-exit=1 --wait=0
         --export=ALL,HET_SURROGATE_HIDE_GPU=1
         --het-group=0 --nodes=1 --ntasks="${cpu_tasks}" --cpus-per-task=1
         /bin/bash "${pin}" "${maia}" ./properties.toml
@@ -269,10 +278,16 @@ else
     export SR_CMD_TIMEOUT=900 SR_SOCKET_TIMEOUT=900000 SR_MODEL_TIMEOUT=900000
     export SMARTSIM_MPI_SEQUENTIAL_PUT=0
     export SR_LOG_LEVEL=INFO SR_LOG_FILE="${run_dir}/smartredis.log"
-    iface="${SMARTSIM_INTERFACE:-lo}"
+    # The controller and CPU-side solver ranks must reach the GPU-node DB.
+    iface="${SMARTSIM_INTERFACE:-ib0}"
+    if [[ "${iface}" == lo || "${iface}" == 127.* || "${iface}" == localhost ]]; then
+        printf 'Heterogeneous SmartSim requires a non-loopback SMARTSIM_INTERFACE (e.g. ib0).\n' >&2
+        exit 1
+    fi
+    printf 'SMARTSIM_INTERFACE=%s\nSMARTSIM_DB_STEP_MEM=0\n' "${iface}" | tee -a run.info
     timeout --signal=TERM --kill-after=10 "$((timeout_s + ready_s + 60))s" \
         python3 "${project_dir}/CPP-ML-Interface/dl_clients/smartsim_controller.py" \
-        --launcher slurm --het-group=1 --interface "${iface}" --db-nodes "${SMARTSIM_DB_NODES:-1}" --auto-port --use-gpu \
+        --launcher slurm --het-group=1 --db-step-mem 0 --interface "${iface}" --db-nodes "${SMARTSIM_DB_NODES:-1}" --auto-port --use-gpu \
         --intra-op-threads 4 --inter-op-threads 1 --threads-per-queue "${SMARTSIM_TPQ:-1}" \
         --cpu-cores-per-node "${gpu_tasks}" --timeout-s "${ready_s}" \
         --endpoint-file .ssdb_endpoint --done-file .solver_done --exp-dir ./ssdb_exp \
@@ -286,7 +301,7 @@ else
     [[ -s .ssdb_endpoint ]] || { printf 'SmartSim readiness timeout; see controller.log.\n' >&2; exit 1; }
     IFS= read -r SSDB < .ssdb_endpoint
     export SSDB
-    solver_cmd=(srun --label --mpi=pmix --cpu-bind=cores --distribution=block --kill-on-bad-exit=1
+    solver_cmd=(srun --label --mpi=pmix --cpu-bind=cores --distribution=block --kill-on-bad-exit=1 --wait=0
         --export=ALL,HET_SURROGATE_HIDE_GPU=1
         --het-group=0 --nodes=1 --ntasks="${cpu_tasks}" --cpus-per-task=1
         /bin/bash "${pin}" "${maia}" ./properties.toml

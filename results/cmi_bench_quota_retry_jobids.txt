@@ -1,0 +1,12 @@
+quota-retry-grp-96p96c4g-transformer-r3,5046461
+quota-retry-grp-24c1g-mlp-r1,5046463
+quota-retry-grp-24c1g-mlp-r2,5046464
+quota-retry-grp-24c1g-mlp-r3,5046465
+quota-retry-grp-24p24c1g-mlp-r2,5046467
+quota-retry-grp-24p24c1g-mlp-r3,5046469
+quota-retry-grp-96c4g-mlp-r1,5046471
+quota-retry-grp-96c4g-mlp-r2,5046473
+quota-retry-grp-96c4g-mlp-r3,5046474
+quota-retry-grp-96p96c4g-mlp-r1,5046475
+quota-retry-grp-96p96c4g-mlp-r2,5046477
+quota-retry-grp-96p96c4g-mlp-r3,5046479

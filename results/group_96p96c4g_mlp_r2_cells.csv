@@ -1,0 +1,12 @@
+aix-96p96c4g-default-coll-mlp-r2,1
+aix-96p96c4g-default-p2p1-mlp-r2,1
+aix-96p96c4g-default-p2pfull-mlp-r2,1
+aix-96p96c4g-affine-coll-mlp-r2,1
+aix-96p96c4g-affine-p2p1-mlp-r2,1
+aix-96p96c4g-affine-p2pfull-mlp-r2,1
+aix-96p96c4g-numa-coll-mlp-r2,1
+aix-96p96c4g-numa-p2p1-mlp-r2,1
+aix-96p96c4g-numa-p2pfull-mlp-r2,1
+phydll-96p96c4g-default-mlp-r2,1
+phydll-96p96c4g-readiness-mlp-r2,1
+smartsim-96p96c4g-shared-mlp-r2,1

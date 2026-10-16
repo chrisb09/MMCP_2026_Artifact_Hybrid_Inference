@@ -18,14 +18,14 @@ dependency_args=()
 if [[ -n "${DEPENDENCY:-}" ]]; then
     dependency_args=(--dependency="${DEPENDENCY}")
 fi
-jobids="results/cmi_bench_grouped_jobids.txt"
+jobids="${JOBIDS_FILE:-results/cmi_bench_grouped_jobids.txt}"
 
 record() { printf '%-40s %s\n' "$1" "$2"; printf '%s,%s\n' "$1" "$2" >> "${jobids}"; }
 
 for model in ${MODELS}; do
     for placement in ${PLACEMENTS}; do
         for rep in ${REPS}; do
-            cell="grp-${placement}-${model}-r${rep}"
+            cell="${GROUP_PREFIX:-grp}-${placement}-${model}-r${rep}"
             common_out="${root}/logs/cmi-${cell}_%j.out"
             common_err="${root}/logs/cmi-${cell}_%j.err"
             case "${placement}" in

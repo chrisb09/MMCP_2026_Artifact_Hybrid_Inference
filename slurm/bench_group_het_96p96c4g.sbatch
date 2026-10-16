@@ -40,7 +40,8 @@ export PROJECT_DIR="${root}"
 source "${root}/slurm/cmi_bench_group_cells.sh"
 
 mkdir -p "${root}/logs/group_cells" "${root}/results"
-summary="${root}/results/group_96p96c4g_${GRP_MODEL}_r${GRP_REP}_cells.csv"
+# Override for retries to keep the original summary intact.
+summary="${GRP_SUMMARY_FILE:-${root}/results/group_96p96c4g_${GRP_MODEL}_r${GRP_REP}_cells.csv}"
 : > "${summary}"
 
 printf 'GROUP_START placement=96p96c4g model=%s rep=%s het_size=%s\n' \

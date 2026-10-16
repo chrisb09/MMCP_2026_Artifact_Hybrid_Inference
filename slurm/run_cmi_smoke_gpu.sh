@@ -106,6 +106,13 @@ scratch_root="$(realpath "${scratch_root}")"
 run_dir="$(mktemp -d "${scratch_root}/${smoke_case}_gpu_${SLURM_JOB_ID}_XXXXXX")"
 cd "${run_dir}"
 mkdir out auxdata boxes planes tmp
+# These benchmark files are disposable; keep text diagnostics on every exit.
+cleanup_hdf5() {
+    if [[ "${KEEP_BENCH_HDF5:-0}" != 1 ]]; then
+        rm -f -- "${run_dir}"/out/*.hdf5 "${run_dir}"/out/*.h5
+    fi
+}
+trap cleanup_hdf5 EXIT
 export TMPDIR="${run_dir}/tmp"
 # Per-node resource sampler + opt-in NUMA pinner, wired into the rank wrapper.
 export CMI_SAMPLER_SCRIPT="${project_dir}/slurm/cmi_node_sampler.sh"
@@ -247,6 +254,7 @@ cleanup() {
     fi
     printf 'EXIT_STATUS=%s\n' "${status}" >> run.info
     collect_peaks
+    cleanup_hdf5
     printf 'Preserved smoke artifacts: %s\n' "${run_dir}"
     exit "${status}"
 }

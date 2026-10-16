@@ -14,6 +14,11 @@
 
 cmi_group_record() { printf '%s,%s\n' "$2" "$3" >> "$1"; }
 
+# Optional space-separated exact cell names; unset/empty runs the full matrix.
+cmi_group_cell_selected() {
+    [[ -z "${CMI_GROUP_CELLS:-}" || " ${CMI_GROUP_CELLS} " == *" $1 "* ]]
+}
+
 # --- model mapping -----------------------------------------------------------
 cmi_group_model_file() {
     case "$1" in
@@ -62,6 +67,7 @@ cmi_group_run_single() {
         lib="$(cmi_group_layout_lib "$layout")"
         for comm in collective p2p1 p2pfull; do
             cell="aix-${placement}-${layout}-$(cmi_group_aix_comm_short "$comm")-${model}-r${rep}"
+            cmi_group_cell_selected "$cell" || continue
             case_name="$(cmi_group_aix_case "$comm")"
             status=0
             (
@@ -79,6 +85,7 @@ cmi_group_run_single() {
 
     for wait in default readiness; do
         cell="phydll-${placement}-${wait}-${model}-r${rep}"
+        cmi_group_cell_selected "$cell" || continue
         [[ "$wait" == default ]] && case_name=phydll-blocking || case_name=phydll-readiness
         status=0
         (
@@ -94,6 +101,7 @@ cmi_group_run_single() {
     done
 
     cell="smartsim-${placement}-shared-${model}-r${rep}"
+    cmi_group_cell_selected "$cell" || return "$fails"
     status=0
     (
         export PILOT_MODEL_FILE="$mf" ML_CUBE_OVERLAP="$ov"
@@ -127,6 +135,7 @@ cmi_group_run_het() {
         lib="$(cmi_group_layout_lib "$layout")"
         for comm in collective p2p1 p2pfull; do
             cell="aix-${placement}-${layout}-$(cmi_group_aix_comm_short "$comm")-${model}-r${rep}"
+            cmi_group_cell_selected "$cell" || continue
             status=0
             (
                 export CPP_ML_INTERFACE_PROVIDER_ENV=AIX
@@ -147,6 +156,7 @@ cmi_group_run_het() {
 
     for wait in default readiness; do
         cell="phydll-${placement}-${wait}-${model}-r${rep}"
+        cmi_group_cell_selected "$cell" || continue
         status=0
         (
             export CPP_ML_INTERFACE_PROVIDER_ENV=PHYDLL
@@ -164,6 +174,7 @@ cmi_group_run_het() {
     done
 
     cell="smartsim-${placement}-shared-${model}-r${rep}"
+    cmi_group_cell_selected "$cell" || return "$fails"
     status=0
     (
         export CPP_ML_INTERFACE_PROVIDER_ENV=SMARTSIM

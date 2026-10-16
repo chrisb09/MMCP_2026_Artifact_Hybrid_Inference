@@ -1,0 +1,5 @@
+cell,original_group_jobid,retry_jobid,interface,reason
+smartsim-24p24c1g-shared-transformer-r1,5009524,5024505,ib0,cross-node database incorrectly bound to loopback
+smartsim-24p24c1g-shared-transformer-r2,5009526,5024507,ib0,cross-node database incorrectly bound to loopback
+smartsim-24p24c1g-shared-transformer-r3,5009528,5024509,ib0,cross-node database incorrectly bound to loopback
+smartsim-96p96c4g-shared-transformer-r1,5009534,5038252,ib0,database step inherited 5G memory limit; override with --mem=0

@@ -1,0 +1,4 @@
+cell,failed_jobid,retry_jobid,reason
+smartsim-24p24c1g-shared-transformer-r2,5024507,5050461,Slurm WaitTime=5 killed GPU-side ranks after CPU-side exit; set --wait=0
+smartsim-24p24c1g-shared-transformer-r3,5024509,5050465,Slurm WaitTime=5 killed GPU-side ranks after CPU-side exit; set --wait=0
+aix-96p96c4g-numa-coll-transformer-r2,5009536,5050467,Slurm WaitTime=5 killed GPU-side ranks after CPU-side exit; set --wait=0

@@ -1,0 +1,3 @@
+shutdown-retry-grp-24p24c1g-transformer-r2,5050461
+shutdown-retry-grp-24p24c1g-transformer-r3,5050465
+shutdown-retry-grp-96p96c4g-transformer-r2,5050467

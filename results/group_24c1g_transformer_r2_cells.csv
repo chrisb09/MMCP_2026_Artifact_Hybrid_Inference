@@ -1,0 +1,12 @@
+aix-24c1g-default-coll-transformer-r2,0
+aix-24c1g-default-p2p1-transformer-r2,0
+aix-24c1g-default-p2pfull-transformer-r2,0
+aix-24c1g-affine-coll-transformer-r2,0
+aix-24c1g-affine-p2p1-transformer-r2,0
+aix-24c1g-affine-p2pfull-transformer-r2,0
+aix-24c1g-numa-coll-transformer-r2,0
+aix-24c1g-numa-p2p1-transformer-r2,0
+aix-24c1g-numa-p2pfull-transformer-r2,0
+phydll-24c1g-default-transformer-r2,0
+phydll-24c1g-readiness-transformer-r2,0
+smartsim-24c1g-shared-transformer-r2,0
