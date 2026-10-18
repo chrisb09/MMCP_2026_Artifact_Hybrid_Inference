@@ -1,0 +1,96 @@
+# SmartSim Per-GPU Supplement
+
+This is a separate, baseline-matched 12-run campaign, not a replacement or an
+input to canonical consolidation. The existing 288 canonical runs and all
+shared SmartSim ledgers remain untouched.
+
+Matrix: transformer (overlap 0), mlp (overlap 4), placements 96c4g and
+96p96c4g, repetitions 1..3. Every cell has 200 timesteps, solution interval
+10000, seven inference calls (15/44 warmups; 73/102/131/160/189 measured).
+TPQ is 4 only for transformer/96c4g; all other cells use 1. Intra/inter-op
+threads are 4/1, explicit DB CPU cores are 0. Four standalone DBs each see one
+allocated GPU as logical CUDA device 0, and each model registers one GPU.
+
+Run commands from the repository root using bash. No jobs were submitted by
+the implementation or tests.
+
+Offline full matrix (12 commands, no sbatch invocation):
+
+    DRY_RUN=1 bash slurm/submit_cmi_bench_smartsim_pergpu.sh
+
+First two pilots, transformer r1 on both placements, dry run:
+
+    DRY_RUN=1 MODELS=transformer PLACEMENTS='96c4g 96p96c4g' REPS=1 bash slurm/submit_cmi_bench_smartsim_pergpu.sh
+
+Parent/operator-only submission of those pilots, after controller review:
+
+    MODELS=transformer PLACEMENTS='96c4g 96p96c4g' REPS=1 bash slurm/submit_cmi_bench_smartsim_pergpu.sh
+
+MODELS and PLACEMENTS accept whitespace-separated subsets. REPS=N means
+repetitions 1..N, where N is 1, 2 or 3. Every invocation creates a unique
+campaign. Set FIRST_REP=2 with REPS=3 to submit only repetitions 2 and 3
+after the two Transformer r1 pilots pass validation. Every invocation creates a unique
+results/cmi_smartsim_pergpu/campaign_<UTC>_<suffix>/ containing manifest.csv,
+jobids.csv, commands.sh, source.sha256, source.diff and status/. Dry runs
+also preserve their own ledgers, marked DRY_RUN, and cannot validate as runs.
+CMI_PERGPU_CAMPAIGN_ROOT optionally redirects those dedicated campaign outputs.
+Run artifacts live under scratch/cmi_smartsim_pergpu/; Slurm logs use unique
+cell names plus job IDs. The root config_smartsim.toml is never mutated.
+
+Single-node allocation: 1 exclusive c23g node, 96 ranks, 4 GPUs, mem=0, 20 min.
+Surrogate heterogeneous allocation exactly follows bench_het_96p96c4g.sbatch:
+two c23g components, each 96 ranks, 4 allocated GPUs, mem-per-cpu=5G, 20 min;
+group 0 hides its GPUs inside pin_cmi_rank.sh. Group 1 hosts the DBs.
+DB steps retain mem=0, ib0 for heterogeneous networking, overlap/exact, solver
+wait=0 for heterogeneous runs, a recorded 600-second case timeout and bounded cleanup.
+The original two pilots used 300 seconds. Heterogeneous pilot 5109331 completed
+its seven calls but exhausted that outer srun budget near teardown; retry 5112134
+uses 600 seconds. See results/cmi_smartsim_pergpu/pilot_retry_cells.csv and the
+retry campaign's recovery.md. The validator accepts the original implicit
+300-second contract or the explicitly recorded new bound, not arbitrary timeouts.
+
+GPU isolation handshake (controller maintained separately): runners export
+SMARTSIM_DB_GPU_IDS with four unique actual allocation CVD tokens and
+SMARTSIM_DB_GPU_COUNT=4. Single-node runs use inherited CVD; absent CVD uses
+an allocation step and GPU UUIDs. Heterogeneous runs always probe group 1:
+
+    srun --het-group=1 --nodes=1 --ntasks=1 --cpus-per-task=1 --overlap --exact --mem=0 /bin/bash -c '...'
+
+The probe logs CVD plus GPU index/UUID identity, never CPU-side GPU IDs or an
+assumed physical 0..3. Controller entity environment must be applied inside
+the Slurm step, since Slurm can reset CVD. Required controller log format:
+
+    SMARTSIM_DB_GPU_MAP {"shard":0,"port":6780,"mask":"GPU-...","logical_device":0}
+
+Exactly four such records must match the endpoint list and GPU-side identity.
+The baseline info logging level is preserved. It supplies provider
+rank-zero DB-index/rank/leader/endpoint (the logger suppresses nonzero MPI ranks);
+other leader ranks are inferred rather than claimed as logged. Model GPU-count=1 is checked in the run-local
+configuration and MAIA override. Any additional logged GPU counts must agree.
+The existing per-node sampler adds a per-GPU-only
+smartsim_gpu_processes.csv (timestamp,pid,gpu_uuid,used_memory,process_command)
+at its existing one-second interval. Validation requires a simultaneous sample
+of four distinct Redis PIDs on four UUIDs, tied by process command ports to the
+four endpoints. Visibility, aggregate memory and a union over time do not pass.
+Unreadable /proc process identity fails validation rather than weakening proof.
+
+After pilot jobs finish, use the exact manifest path printed by their submitter:
+
+    python3.11 scripts/validate_cmi_smartsim_pergpu.py --manifest results/cmi_smartsim_pergpu/campaign_<id>/manifest.csv --expected-cells 2 --output results/cmi_smartsim_pergpu/campaign_<id>/validation.json
+
+For the full campaign omit --expected-cells (default 12). Validation reads only
+explicit manifest job/cell status files and their matched run paths, verifies
+success, resources, seven timings, canonical shared-cell workload equality,
+local config, revision/artifact hashes, four endpoints, mapping, provider and
+runtime GPU-process evidence. Missing evidence fails closed. It never queries
+Slurm, scans for newest/fastest runs, or changes baseline results.
+
+Offline tests:
+
+    python3.11 -m unittest discover -s tests -p 'test_cmi_smartsim_pergpu.py' -v
+
+Python 3.11+ is required for tomllib (also used by the existing runners).
+
+Tests cover 12-cell and 2-pilot dry runs, TPQ, bash syntax, run-local config,
+noncontiguous allocated masks, duplicate-mask rejection and fail-closed status,
+resource, workload, inference, controller-map and runtime-process checks.

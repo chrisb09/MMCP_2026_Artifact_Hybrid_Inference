@@ -141,6 +141,7 @@ elif [[ "${provider}" == PHYDLL ]]; then
 else
     cp "${project_dir}/config_smartsim.toml" config_smartsim.toml
 fi
+source "${project_dir}/slurm/cmi_smartsim_pergpu.sh"
 if [[ "${DEBUG_EXPORT:-0}" == 1 ]]; then
     mkdir debug_dumps
     export MLCOUPLING_DEBUG_EXPORT=1 MLCOUPLING_DEBUG_ALL_RANKS=1
@@ -174,6 +175,7 @@ fi
     printf 'MAIA_ML_STEP_TIMING_PRINT=%s\n' "${MAIA_ML_STEP_TIMING_PRINT:-0}"
     printf 'DEBUG_EXPORT=%s\n' "${DEBUG_EXPORT:-0}"
     printf 'BATCH_HOST=%s\n' "$(hostname -s 2>/dev/null || hostname)"
+    cmi_smartsim_metadata 1 "${SMARTSIM_INTERFACE:-ib0}" slurm 900
     if [[ -n "${SLURM_HET_SIZE:-}" ]]; then
         printf 'HET_GPU_NODELIST=%s\n' "${SLURM_JOB_NODELIST_HET_GROUP_1:-unknown}"
     fi
@@ -225,11 +227,16 @@ cleanup() {
     local status=$?
     if [[ -n "${controller_pid}" ]]; then
         touch .solver_done
+        for ((i = 0; i < 30; ++i)); do
+            kill -0 "${controller_pid}" 2>/dev/null || break
+            sleep 1
+        done
         kill -TERM -- "-${controller_pid}" 2>/dev/null || kill "${controller_pid}" 2>/dev/null || true
         wait "${controller_pid}" 2>/dev/null || true
     fi
     collect_peaks
     printf 'EXIT_STATUS=%s\n' "${status}" >> run.info
+    cmi_smartsim_status "${status}"
     cleanup_hdf5
     printf 'Preserved bench artifacts: %s\n' "${run_dir}"
     exit "${status}"
@@ -287,9 +294,9 @@ else
     printf 'SMARTSIM_INTERFACE=%s\nSMARTSIM_DB_STEP_MEM=0\n' "${iface}" | tee -a run.info
     timeout --signal=TERM --kill-after=10 "$((timeout_s + ready_s + 60))s" \
         python3 "${project_dir}/CPP-ML-Interface/dl_clients/smartsim_controller.py" \
-        --launcher slurm --het-group=1 --db-step-mem 0 --interface "${iface}" --db-nodes "${SMARTSIM_DB_NODES:-1}" --auto-port --use-gpu \
+        --launcher slurm --het-group=1 --db-step-mem 0 --interface "${iface}" "${smartsim_layout_args[@]}" --db-nodes "${SMARTSIM_DB_NODES:-1}" --auto-port --use-gpu \
         --intra-op-threads 4 --inter-op-threads 1 --threads-per-queue "${SMARTSIM_TPQ:-1}" \
-        --cpu-cores-per-node "${gpu_tasks}" --timeout-s "${ready_s}" \
+        --cpu-cores-per-node "${smartsim_cpu_cores}" --timeout-s "${ready_s}" \
         --endpoint-file .ssdb_endpoint --done-file .solver_done --exp-dir ./ssdb_exp \
         > controller.log 2>&1 &
     controller_pid=$!

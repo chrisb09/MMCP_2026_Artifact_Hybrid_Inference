@@ -1,0 +1,2 @@
+cell,original_jobid,retry_jobid,original_timeout_seconds,retry_timeout_seconds,retry_manifest,reason
+smartsim-96p96c4g-pergpu-transformer-r1,5109331,5112134,300,600,results/cmi_smartsim_pergpu/campaign_20261018T044023Z_qZ4xw3/manifest.csv,all seven inference calls and final output completed; outer srun deadline expired near teardown after substantial startup overhead

@@ -1,0 +1,3 @@
+cell,original_jobid,retry_jobid,reason,solver_timeout_seconds,engine_sha256,source_revision
+aix-96p96c4g-affine-coll-transformer-r2,5009536,5063099,post-solver shell parse failure; current runner syntax checked; historical cause unproven,300,0fe84d7888ba658037e101ae310981d5f873f06ef7e57e5338664f3ccd34075d,87ed43187d6ebfb6a7b3f4e7949cfdccfcfb8acc
+smartsim-24p24c1g-shared-mlp-r1,5009548,5063101,timeout localized to final output completion; no proven code defect; controlled same-limit retry after storage recovery,300,0fe84d7888ba658037e101ae310981d5f873f06ef7e57e5338664f3ccd34075d,87ed43187d6ebfb6a7b3f4e7949cfdccfcfb8acc

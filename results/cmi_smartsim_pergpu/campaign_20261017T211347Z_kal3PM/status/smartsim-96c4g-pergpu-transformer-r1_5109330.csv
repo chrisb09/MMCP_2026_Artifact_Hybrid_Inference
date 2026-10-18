@@ -1,0 +1,2 @@
+cell,jobid,status,run_dir
+smartsim-96c4g-pergpu-transformer-r1,5109330,0,/rwthfs/rz/cluster/hpcwork/ro092286/MMCP_2026_Artifact_Hybrid_Inference/scratch/cmi_smartsim_pergpu/smartsim_gpu_5109330_eu1djA

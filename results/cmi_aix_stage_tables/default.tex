@@ -1,0 +1,35 @@
+% Requires booktabs, graphicx, pdflscape. All values in ms.
+\begin{landscape}
+\begin{table}[p]
+\centering
+\caption{AIx default: collective stages, shared credit-independent ideal predictions, and measured P2P timings (ms).}
+\label{tab:aix-stages-default}
+\setlength{\tabcolsep}{3pt}
+\scriptsize
+\resizebox{\linewidth}{!}{%
+\begin{tabular}{llrrrrrrrrrrrrrrr}
+\toprule
+\shortstack{Model} & \shortstack{Hardware} & \shortstack{Send\\input} & \shortstack{H2D} & \shortstack{Forward} & \shortstack{D2H} & \shortstack{Send\\output} & \shortstack{Stage\\sum} & \shortstack{Coll.\\ML\\step} & \shortstack{c1\\ideal\\pipeline} & \shortstack{c1\\ideal\\ML\\step} & \shortstack{Full\\ideal\\pipeline} & \shortstack{Full\\ideal\\ML\\step} & \shortstack{c1\\measured\\ML\\step} & \shortstack{Full\\measured\\ML\\step} & \shortstack{c1\\ready-range\\window} & \shortstack{Full\\ready-range\\window} \\
+\midrule
+mlp & 24c/1GPU & 268.358 & 95.781 & 11.194 & 49.369 & 167.945 & 592.647 & 1090.885 & 281.870 & 780.108 & 281.870 & 780.108 & 983.873 & 994.463 & 425.493 & 401.184 \\
+mlp & 24+24c/1GPU & 250.891 & 108.717 & 80.785 & 92.469 & 132.281 & 665.143 & 927.537 & 312.132 & 574.525 & 312.132 & 574.525 & 722.341 & 658.069 & 407.052 & 353.282 \\
+mlp & 96c/4GPUs & 138.888 & 43.460 & 2.898 & 20.904 & 66.153 & 272.303 & 406.772 & 149.485 & 283.954 & 149.485 & 283.954 & 382.583 & 362.623 & 218.092 & 190.966 \\
+mlp & 96+96c/4GPUs & 121.326 & 40.053 & 2.604 & 17.043 & 53.987 & 235.013 & 297.099 & 127.432 & 189.518 & 127.432 & 189.518 & 230.242 & 236.803 & 147.775 & 148.459 \\
+transformer & 24c/1GPU & 42.983 & 15.544 & 5547.416 & 8.061 & 26.688 & 5640.691 & 5741.751 & 5551.303 & 5652.362 & 5551.303 & 5652.362 & 5904.137 & 5940.601 & 5830.770 & 5867.291 \\
+transformer & 24+24c/1GPU & 35.546 & 18.637 & 5583.581 & 11.208 & 23.782 & 5672.753 & 5713.379 & 5585.439 & 5626.065 & 5585.439 & 5626.065 & 6480.893 & 6428.649 & 6445.358 & 6390.953 \\
+transformer & 96c/4GPUs & 22.271 & 6.221 & 1627.563 & 5.416 & 15.481 & 1676.953 & 1714.199 & 1630.441 & 1667.687 & 1630.441 & 1667.687 & 2019.747 & 2262.500 & 1984.309 & 2020.097 \\
+transformer & 96+96c/4GPUs & 24.344 & 5.164 & 1654.835 & 6.699 & 12.586 & 1703.627 & 1729.959 & 1657.429 & 1683.760 & 1657.429 & 1683.760 & 2438.280 & 2465.733 & 2417.920 & 2445.149 \\
+\bottomrule
+\end{tabular}%
+}
+\par\smallskip
+\begin{minipage}{\linewidth}\footnotesize
+All durations are in milliseconds. Each row averages three independent
+repetition means, each from five measured calls. c1 and full-credit ideal columns
+are aliases of ONE COMMON credit-independent prediction, not separate models.
+Measured ML-step times are canonical MAIA full-step latencies. Ready-range windows
+are measured controller-local spans, NOT five-stage elapsed times or global
+makespans. See the accompanying README for definitions, assumptions, and uncertainty.
+\end{minipage}
+\end{table}
+\end{landscape}

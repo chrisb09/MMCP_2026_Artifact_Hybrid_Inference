@@ -1,0 +1,26 @@
+{
+  "status": "ok",
+  "cell": "aix-24c1g-default-coll-transformer-r2",
+  "original_jobid": "5009522",
+  "measurement_jobid": "5106286",
+  "run_dir": "scratch/cmi_smokes/aix-collective_gpu_5106286_1ln5Uv",
+  "observation_kind": "supplemental_repeat",
+  "scheduler_reported": {"state": "COMPLETED", "exit_code": "0:0", "elapsed": "00:02:54", "node": "n23g0013", "source": "user supplied job accounting"},
+  "configuration": {"model": "./input/transformer_inference_scripted_fw2.pt", "overlap": 0, "batch_size": 50000, "solver_ranks": 24, "gpu_count": 1, "layout": "default", "comm": "collective", "build_path": "maia/build_gnu_production/bin/maia", "build_binary_hash_at_execution": null},
+  "workload": {"cubes_per_rank": 1152, "samples_per_rank": 3456, "cubes_aggregate": 27648, "samples_aggregate": 82944, "solver_ranks": 24},
+  "steps": [15, 44, 73, 102, 131, 160, 189],
+  "solver_exit_status": 0,
+  "exit_status": 0,
+  "peak": {"scope": "device_wide", "host": "n23g0013", "device": 0, "baseline_mib": 0, "peak_mib": 16969, "peak_gib": 16.5712890625},
+  "capacity_comparison_gib": {"old_max": 16.5712890625, "new_max": 16.5712890625},
+  "verification": {"command": "python -m unittest discover -s scripts -p test_plot_cmi_ch6.py", "tests_passed": 8, "figure_triplets": 20, "canonical_snapshot_unchanged": true, "latency_unchanged": true, "other_memory_unchanged": true, "plot_values_sha256_before_and_after": "c549e9971af4cf01f1f37322fcb1b5639282d845a2c7f3492edeb4cbddae99b1"},
+  "policy": "Supplemental device-wide capacity observation only; no canonical replacement, timing or RAM substitution. Build path matches; execution-time binary/model hashes are unavailable, not inferred.",
+  "hashes": {
+    "scratch/cmi_smokes/aix-collective_gpu_5106286_1ln5Uv/run.info": "e6043d56626819a18416f2226f8d8bcd2e85007e1f66e0cb3fc8f2a0e160d8d8",
+    "scratch/cmi_smokes/aix-collective_gpu_5106286_1ln5Uv/solver.log": "59c9b9fd74439fbecc4a6082c6d03365c819d712d9adc7f0390b3115e9c21c0e",
+    "scratch/cmi_smokes/aix-collective_gpu_5009522_NZ2UZZ/run.info": "1b29b67d7f8d1242a32663027526fbedd9d395574ed030614fcee253a1606e08",
+    "scratch/cmi_smokes/aix-collective_gpu_5009522_NZ2UZZ/solver.log": "208e4bb8ffcbd7ad7d99156cd38038a39685d4983a4db4766efe2e03090feb2d",
+    "results/cmi_bench_telemetry_retry_cells.csv": "9c5a8f87405e90d65f0acc98e1460324f70f32d7522fb3f64b9d35d3e7262571",
+    "results/telemetry_retry_group_24c1g_transformer_r2_cells.csv": "89f954a885369aeaf00608eedaadde02a80cf11d71285f2363fe81ce9ce58e0d"
+  }
+}

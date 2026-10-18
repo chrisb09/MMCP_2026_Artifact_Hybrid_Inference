@@ -40,6 +40,16 @@ while true; do
         printf '%s\n' "${mem_peak}" > "${mem_file}"
     fi
     if command -v nvidia-smi >/dev/null 2>&1; then
+        if [[ "${SMARTSIM_DB_LAYOUT:-shared}" == per-ml-node && "${HET_SURROGATE_HIDE_GPU:-0}" != 1 ]]; then
+            # Keep UUIDs and process identity together for post-run isolation proof.
+            stamp="$(date +%s)"
+            while IFS= read -r app; do
+                [[ -n "${app}" ]] || continue
+                pid="${app%%,*}"; pid="${pid//[[:space:]]/}"
+                cmd="$(tr '\0' ' ' < "/proc/${pid}/cmdline" 2>/dev/null || true)"
+                printf '%s,%s,%s\n' "${stamp}" "${app}" "${cmd//,/;}" >> "${out_dir}/smartsim_gpu_processes.csv"
+            done < <(nvidia-smi --query-compute-apps=pid,gpu_uuid,used_memory --format=csv,noheader,nounits 2>/dev/null)
+        fi
         # Number of processes holding a CUDA context on the GPUs (detects
         # one-context-per-rank rather than one GPU controller).
         nproc="$(nvidia-smi --query-compute-apps=pid --format=csv,noheader 2>/dev/null | grep -c . || true)"

@@ -1,0 +1,2 @@
+cell,original_jobid,retry_jobid,reason,solver_timeout_seconds,group_summary,selection_policy
+aix-24c1g-default-coll-transformer-r2,5009522,5106286,repeat original configuration to recover missing sampled device-wide VRAM peak,300,results/telemetry_retry_group_24c1g_transformer_r2_cells.csv,supplementary repeat; not selected into canonical data automatically

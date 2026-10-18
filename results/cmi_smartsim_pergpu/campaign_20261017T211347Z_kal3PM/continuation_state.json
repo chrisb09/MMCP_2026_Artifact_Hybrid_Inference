@@ -1,0 +1,37 @@
+{
+  "manifest": "/rwthfs/rz/cluster/hpcwork/ro092286/MMCP_2026_Artifact_Hybrid_Inference/results/cmi_smartsim_pergpu/campaign_20261017T211347Z_kal3PM/manifest.csv",
+  "jobids": [
+    "5109330",
+    "5109331"
+  ],
+  "created_at": "2026-10-17T21:19:12.550957+00:00",
+  "deadline_epoch": 1792358352.5509813,
+  "batches": [],
+  "launch_started": false,
+  "pid": 372361,
+  "invoked_at": "2026-10-17T23:29:18.855353+00:00",
+  "status": "blocked",
+  "sacct_command": [
+    "sacct",
+    "-n",
+    "-P",
+    "-j",
+    "5109330,5109331",
+    "--format=JobIDRaw,State,ExitCode"
+  ],
+  "updated_at": "2026-10-18T00:13:21.316446+00:00",
+  "sacct_stdout": "5109330|COMPLETED|0:0\n5109330.batch|COMPLETED|0:0\n5109330.extern|COMPLETED|0:0\n5109330.0|COMPLETED|0:0\n5109331|FAILED|124:0\n5109331.batch|FAILED|124:0\n5109331.extern|COMPLETED|0:0\n5109331.5|CANCELLED by 35572|0:9\n5109332|FAILED|124:0\n5109332.extern|COMPLETED|0:0\n5109332.0|COMPLETED|0:0\n5109332.1|COMPLETED|0:0\n5109332.2|COMPLETED|0:0\n5109332.3|COMPLETED|0:0\n5109332.4|COMPLETED|0:0\n5109332.5|CANCELLED by 35572|0:9\n",
+  "sacct_stderr": "",
+  "checked_at": "2026-10-18T00:13:21.316377+00:00",
+  "pilot_states": {
+    "5109330": {
+      "state": "COMPLETED",
+      "exit_code": "0:0"
+    },
+    "5109331": {
+      "state": "FAILED",
+      "exit_code": "124:0"
+    }
+  },
+  "error": "pilot not successful: {'state': 'FAILED', 'exit_code': '124:0'}"
+}

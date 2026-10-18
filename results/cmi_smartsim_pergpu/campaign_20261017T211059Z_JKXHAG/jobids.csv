@@ -1,0 +1,12 @@
+smartsim-96c4g-pergpu-transformer-r1,DRY_RUN
+smartsim-96c4g-pergpu-transformer-r2,DRY_RUN
+smartsim-96c4g-pergpu-transformer-r3,DRY_RUN
+smartsim-96p96c4g-pergpu-transformer-r1,DRY_RUN
+smartsim-96p96c4g-pergpu-transformer-r2,DRY_RUN
+smartsim-96p96c4g-pergpu-transformer-r3,DRY_RUN
+smartsim-96c4g-pergpu-mlp-r1,DRY_RUN
+smartsim-96c4g-pergpu-mlp-r2,DRY_RUN
+smartsim-96c4g-pergpu-mlp-r3,DRY_RUN
+smartsim-96p96c4g-pergpu-mlp-r1,DRY_RUN
+smartsim-96p96c4g-pergpu-mlp-r2,DRY_RUN
+smartsim-96p96c4g-pergpu-mlp-r3,DRY_RUN

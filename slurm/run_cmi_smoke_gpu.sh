@@ -157,6 +157,7 @@ elif [[ "${provider}" == AIX ]]; then
     sed -i '/^[[:space:]]*communication_mode[[:space:]]*=/d' "${config_name}"
     sed -i "/^\[library\]/a communication_mode = \"${aix_comm}\"" "${config_name}"
 fi
+source "${project_dir}/slurm/cmi_smartsim_pergpu.sh"
 if [[ "${DEBUG_EXPORT:-0}" == 1 ]]; then
     mkdir debug_dumps
     export MLCOUPLING_DEBUG_EXPORT=1 MLCOUPLING_DEBUG_ALL_RANKS=1
@@ -189,6 +190,7 @@ fi
     printf 'SLURM_CPUS_ON_NODE=%s\n' "${SLURM_CPUS_ON_NODE:-unknown}"
     printf 'SLURM_JOB_GPUS=%s\n' "${SLURM_JOB_GPUS:-${GPU_DEVICE_ORDINAL:-unknown}}"
     printf 'BATCH_HOST=%s\n' "$(hostname -s 2>/dev/null || hostname)"
+    cmi_smartsim_metadata 4 lo local 600
 } | tee run.info
 
 # Confirm the allocated GPU is actually visible before inference.
@@ -253,6 +255,7 @@ cleanup() {
         wait "${controller_pid}" 2>/dev/null || true
     fi
     printf 'EXIT_STATUS=%s\n' "${status}" >> run.info
+    cmi_smartsim_status "${status}"
     collect_peaks
     cleanup_hdf5
     printf 'Preserved smoke artifacts: %s\n' "${run_dir}"
@@ -294,11 +297,12 @@ elif [[ "${provider}" == SMARTSIM ]]; then
     export SR_CMD_TIMEOUT=600 SR_SOCKET_TIMEOUT=600000 SR_MODEL_TIMEOUT=600000
     export SMARTSIM_MPI_SEQUENTIAL_PUT=0
     export SR_LOG_LEVEL=INFO SR_LOG_FILE="${run_dir}/smartredis.log"
+    [[ "${SMARTSIM_DB_LAYOUT}" != per-ml-node ]] || solver_cmd+=(--wait=0)
     timeout --signal=TERM --kill-after=10 "$((timeout_s + ready_s + 60))s" \
         python3 "${project_dir}/CPP-ML-Interface/dl_clients/smartsim_controller.py" \
-        --launcher local --interface lo --db-nodes "${SMARTSIM_DB_NODES:-1}" --auto-port --use-gpu \
+        --launcher local --interface lo --db-step-mem 0 "${smartsim_layout_args[@]}" --db-nodes "${SMARTSIM_DB_NODES:-1}" --auto-port --use-gpu \
         --intra-op-threads 4 --inter-op-threads 1 --threads-per-queue "${SMARTSIM_TPQ:-4}" \
-        --cpu-cores-per-node "${np_solver}" --timeout-s "${ready_s}" \
+        --cpu-cores-per-node "${smartsim_cpu_cores}" --timeout-s "${ready_s}" \
         --endpoint-file .ssdb_endpoint --done-file .solver_done --exp-dir ./ssdb_exp \
         > controller.log 2>&1 &
     controller_pid=$!

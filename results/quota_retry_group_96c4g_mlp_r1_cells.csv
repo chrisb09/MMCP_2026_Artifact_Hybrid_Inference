@@ -1,0 +1,12 @@
+aix-96c4g-default-coll-mlp-r1,0
+aix-96c4g-default-p2p1-mlp-r1,0
+aix-96c4g-default-p2pfull-mlp-r1,0
+aix-96c4g-affine-coll-mlp-r1,0
+aix-96c4g-affine-p2p1-mlp-r1,0
+aix-96c4g-affine-p2pfull-mlp-r1,0
+aix-96c4g-numa-coll-mlp-r1,0
+aix-96c4g-numa-p2p1-mlp-r1,0
+aix-96c4g-numa-p2pfull-mlp-r1,0
+phydll-96c4g-default-mlp-r1,0
+phydll-96c4g-readiness-mlp-r1,0
+smartsim-96c4g-shared-mlp-r1,0

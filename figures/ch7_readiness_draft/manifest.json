@@ -1,0 +1,36 @@
+{
+  "sources": {
+    "runs.csv": {
+      "path": "/rwthfs/rz/cluster/hpcwork/ro092286/MMCP_2026_Artifact_Hybrid_Inference/results/cmi_bench_consolidated/runs.csv",
+      "sha256": "7a149e18053301c8563294bc0b5d326fef7f0d4cdb35bb1384e2ba4b07b32adb",
+      "bytes": 115735
+    },
+    "inferences.csv": {
+      "path": "/rwthfs/rz/cluster/hpcwork/ro092286/MMCP_2026_Artifact_Hybrid_Inference/results/cmi_bench_consolidated/inferences.csv",
+      "sha256": "547890956b136fe094c4de2da798b31b5fef2f088b5f432450586041b5c7015a",
+      "bytes": 132747
+    },
+    "report.json": {
+      "path": "/rwthfs/rz/cluster/hpcwork/ro092286/MMCP_2026_Artifact_Hybrid_Inference/results/cmi_bench_consolidated/report.json",
+      "sha256": "f1fdd90012d4cc3920edff951009688c53859ce511a195ebf1e177bbf5599f48",
+      "bytes": 226462
+    }
+  },
+  "bars": 24,
+  "independent_runs": 72,
+  "measured_calls": 360,
+  "calls_per_run": 5,
+  "student_t_critical": 4.30265,
+  "df": 2,
+  "combined_width_mm": 150,
+  "panel_width_mm": 73.5,
+  "height_mm": 65,
+  "fonts_pt": {
+    "axis": 9,
+    "ticks": 8,
+    "legend": 6.5
+  },
+  "consolidation_warnings": [
+    "aix-24c1g-default-coll-transformer-r2 job 5009522: missing gpu_vram host=n23g0007 device=0"
+  ]
+}

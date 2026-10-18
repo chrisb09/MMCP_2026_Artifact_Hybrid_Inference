@@ -1,0 +1,98 @@
+{
+  "manifest": "/rwthfs/rz/cluster/hpcwork/ro092286/MMCP_2026_Artifact_Hybrid_Inference/results/cmi_smartsim_pergpu/campaign_20261017T211347Z_kal3PM/manifest.csv",
+  "jobids": [
+    "5109330",
+    "5112134"
+  ],
+  "created_at": "2026-10-18T04:42:03.017334+00:00",
+  "deadline_epoch": 1792384923.0173414,
+  "batches": [],
+  "launch_started": false,
+  "original_manifest": "/rwthfs/rz/cluster/hpcwork/ro092286/MMCP_2026_Artifact_Hybrid_Inference/results/cmi_smartsim_pergpu/campaign_20261017T211347Z_kal3PM/manifest.csv",
+  "retry_manifest": "/rwthfs/rz/cluster/hpcwork/ro092286/MMCP_2026_Artifact_Hybrid_Inference/results/cmi_smartsim_pergpu/campaign_20261018T044023Z_qZ4xw3/manifest.csv",
+  "original_jobids": [
+    "5109330",
+    "5109331"
+  ],
+  "effective_jobids": [
+    "5109330",
+    "5112134"
+  ],
+  "retry_authorization": "Explicit --pilot-retry-manifest approval of failed heterogeneous pilot replacement; original failure reviewed by caller, not re-polled",
+  "pid": 368438,
+  "invoked_at": "2026-10-18T04:42:03.017347+00:00",
+  "status": "blocked",
+  "sacct_command": [
+    "sacct",
+    "-n",
+    "-P",
+    "-j",
+    "5109330,5112134",
+    "--format=JobIDRaw,State,ExitCode"
+  ],
+  "updated_at": "2026-10-18T05:07:08.109221+00:00",
+  "sacct_stdout": "5109330|COMPLETED|0:0\n5109330.batch|COMPLETED|0:0\n5109330.extern|COMPLETED|0:0\n5109330.0|COMPLETED|0:0\n5112134|COMPLETED|0:0\n5112134.batch|COMPLETED|0:0\n5112134.extern|COMPLETED|0:0\n5112134.5|COMPLETED|0:0\n5112135|COMPLETED|0:0\n5112135.extern|COMPLETED|0:0\n5112135.0|COMPLETED|0:0\n5112135.1|COMPLETED|0:0\n5112135.2|COMPLETED|0:0\n5112135.3|COMPLETED|0:0\n5112135.4|COMPLETED|0:0\n5112135.5|COMPLETED|0:0\n",
+  "sacct_stderr": "",
+  "checked_at": "2026-10-18T05:07:04.415584+00:00",
+  "pilot_states": {
+    "5109330": {
+      "state": "COMPLETED",
+      "exit_code": "0:0"
+    },
+    "5112134": {
+      "state": "COMPLETED",
+      "exit_code": "0:0"
+    }
+  },
+  "validation_report": {
+    "manifest": "/rwthfs/rz/cluster/hpcwork/ro092286/MMCP_2026_Artifact_Hybrid_Inference/results/cmi_smartsim_pergpu/campaign_20261017T211347Z_kal3PM/manifest.csv",
+    "retry_manifest": "/rwthfs/rz/cluster/hpcwork/ro092286/MMCP_2026_Artifact_Hybrid_Inference/results/cmi_smartsim_pergpu/campaign_20261018T044023Z_qZ4xw3/manifest.csv",
+    "baseline": "/rwthfs/rz/cluster/hpcwork/ro092286/MMCP_2026_Artifact_Hybrid_Inference/results/cmi_bench_consolidated/runs.csv",
+    "accepted": [
+      {
+        "cell": "smartsim-96c4g-pergpu-transformer-r1",
+        "jobid": "5109330",
+        "run_dir": "/rwthfs/rz/cluster/hpcwork/ro092286/MMCP_2026_Artifact_Hybrid_Inference/scratch/cmi_smartsim_pergpu/smartsim_gpu_5109330_eu1djA",
+        "inferences": 7,
+        "measured": 5,
+        "workload": {
+          "cubes_per_rank": 336,
+          "samples_per_rank": 1008,
+          "cubes_aggregate": 30336,
+          "samples_aggregate": 91008,
+          "workload_solver_ranks": 96
+        },
+        "hashes": {
+          "maia": "3db91ef1f3ba666a3676043e0d168d1ff53dcf65a9e6012dd3996b3d137b35f6",
+          "transformer_inference_scripted_fw2.pt": "bd2498fc594f73e4bad1088efa7522495e2289b85a853d2f3c7e081e41842147",
+          "properties.toml": "6e29d32013d4de502ab9f425e417c60f1146db529a65e83099cedcd909c8a8bd",
+          "config_smartsim.toml": "016855e3185ce5546b53c51e90fa523a32c3290758428515202ff4a198aa62cd",
+          "smartsim_controller.py": "1640b8042bc9c98857ea3c0a35d5fac4dc878f4dd2d18f964e947c19d4cc54ab"
+        },
+        "resource_peaks_mib": {
+          "NODE_RAM_PEAK_MIB_n23g0004": 83098.0,
+          "GPU_VRAM_PEAK_MIB_n23g0004_gpu0": 3380.0,
+          "GPU_VRAM_PEAK_MIB_n23g0004_gpu1": 3448.0,
+          "GPU_VRAM_PEAK_MIB_n23g0004_gpu2": 3320.0,
+          "GPU_VRAM_PEAK_MIB_n23g0004_gpu3": 3354.0
+        },
+        "provider_leader_log_scope": "MPI rank zero only; other leaders suppressed by logging.hpp",
+        "inferred_leader_ranks": [
+          0,
+          24,
+          48,
+          72
+        ]
+      }
+    ],
+    "errors": [
+      {
+        "cell": "smartsim-96p96c4g-pergpu-transformer-r1",
+        "manifest": "/rwthfs/rz/cluster/hpcwork/ro092286/MMCP_2026_Artifact_Hybrid_Inference/results/cmi_smartsim_pergpu/campaign_20261018T044023Z_qZ4xw3/manifest.csv",
+        "error": "allocation not exclusive"
+      }
+    ],
+    "valid": false
+  },
+  "error": "pilot validation failed; no continuation submitted"
+}

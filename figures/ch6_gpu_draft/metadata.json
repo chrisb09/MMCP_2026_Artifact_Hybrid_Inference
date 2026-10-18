@@ -1,0 +1,628 @@
+{
+  "inputs": {
+    "runs.csv": {
+      "path": "/rwthfs/rz/cluster/hpcwork/ro092286/MMCP_2026_Artifact_Hybrid_Inference/results/cmi_bench_consolidated/runs.csv",
+      "sha256": "7a149e18053301c8563294bc0b5d326fef7f0d4cdb35bb1384e2ba4b07b32adb"
+    },
+    "resources.csv": {
+      "path": "/rwthfs/rz/cluster/hpcwork/ro092286/MMCP_2026_Artifact_Hybrid_Inference/results/cmi_bench_consolidated/resources.csv",
+      "sha256": "8e3ddcd2317fc9fe156d8778aa432753c3458d793e23771f7506658721b07995"
+    },
+    "report.json": {
+      "path": "/rwthfs/rz/cluster/hpcwork/ro092286/MMCP_2026_Artifact_Hybrid_Inference/results/cmi_bench_consolidated/report.json",
+      "sha256": "f1fdd90012d4cc3920edff951009688c53859ce511a195ebf1e177bbf5599f48"
+    }
+  },
+  "counts": {
+    "input_runs": 288,
+    "baseline_runs": 72,
+    "latency_bars": 24,
+    "steady_calls": 360,
+    "input_resource_rows": 1512,
+    "memory_audit_rows": 72,
+    "memory_applicable_bars": 60,
+    "expected_device_observations": 180,
+    "supplemental_device_observations": 1,
+    "original_observed_device_peaks": 179,
+    "observed_device_peaks": 180,
+    "missing_device_peaks": 1,
+    "figure_triplets": 20
+  },
+  "figure_dimensions_mm": {
+    "width": 150,
+    "single_height": 54,
+    "two_panel_height": 55,
+    "three_panel_height": 149,
+    "paired_layout": "1x2",
+    "model_slot_width": 73.5,
+    "halfwidth": 73.5,
+    "halfwidth_height": 64,
+    "axes_height": 32
+  },
+  "student_t_critical_df2": 4.302652729911275,
+  "consolidation_warnings": [
+    "aix-24c1g-default-coll-transformer-r2 job 5009522: missing gpu_vram host=n23g0007 device=0"
+  ],
+  "supplement": {
+    "path": "/rwthfs/rz/cluster/hpcwork/ro092286/MMCP_2026_Artifact_Hybrid_Inference/results/cmi_bench_telemetry_retry_validation.json",
+    "sha256": "194e7a5c288ede12e536ab99289caa8b934dfd7f2798af9fd4711f3b31edd330"
+  },
+  "workloads": [
+    {
+      "cell": "aix-24c1g-default-coll-transformer-r1",
+      "samples_aggregate": "82944",
+      "samples_per_rank": "3456",
+      "solver_ranks": "24",
+      "overlap": "0",
+      "batch_size": "50000"
+    },
+    {
+      "cell": "phydll-24c1g-default-transformer-r1",
+      "samples_aggregate": "82944",
+      "samples_per_rank": "3456",
+      "solver_ranks": "24",
+      "overlap": "0",
+      "batch_size": "2048"
+    },
+    {
+      "cell": "smartsim-24c1g-shared-transformer-r1",
+      "samples_aggregate": "82944",
+      "samples_per_rank": "3456",
+      "solver_ranks": "24",
+      "overlap": "0",
+      "batch_size": ""
+    },
+    {
+      "cell": "aix-24c1g-default-coll-transformer-r2",
+      "samples_aggregate": "82944",
+      "samples_per_rank": "3456",
+      "solver_ranks": "24",
+      "overlap": "0",
+      "batch_size": "50000"
+    },
+    {
+      "cell": "phydll-24c1g-default-transformer-r2",
+      "samples_aggregate": "82944",
+      "samples_per_rank": "3456",
+      "solver_ranks": "24",
+      "overlap": "0",
+      "batch_size": "2048"
+    },
+    {
+      "cell": "smartsim-24c1g-shared-transformer-r2",
+      "samples_aggregate": "82944",
+      "samples_per_rank": "3456",
+      "solver_ranks": "24",
+      "overlap": "0",
+      "batch_size": ""
+    },
+    {
+      "cell": "aix-24c1g-default-coll-transformer-r3",
+      "samples_aggregate": "82944",
+      "samples_per_rank": "3456",
+      "solver_ranks": "24",
+      "overlap": "0",
+      "batch_size": "50000"
+    },
+    {
+      "cell": "phydll-24c1g-default-transformer-r3",
+      "samples_aggregate": "82944",
+      "samples_per_rank": "3456",
+      "solver_ranks": "24",
+      "overlap": "0",
+      "batch_size": "2048"
+    },
+    {
+      "cell": "smartsim-24c1g-shared-transformer-r3",
+      "samples_aggregate": "82944",
+      "samples_per_rank": "3456",
+      "solver_ranks": "24",
+      "overlap": "0",
+      "batch_size": ""
+    },
+    {
+      "cell": "aix-24c1g-default-coll-mlp-r1",
+      "samples_aggregate": "518400",
+      "samples_per_rank": "21600",
+      "solver_ranks": "24",
+      "overlap": "4",
+      "batch_size": "1000000"
+    },
+    {
+      "cell": "phydll-24c1g-default-mlp-r1",
+      "samples_aggregate": "518400",
+      "samples_per_rank": "21600",
+      "solver_ranks": "24",
+      "overlap": "4",
+      "batch_size": "1000000"
+    },
+    {
+      "cell": "smartsim-24c1g-shared-mlp-r1",
+      "samples_aggregate": "518400",
+      "samples_per_rank": "21600",
+      "solver_ranks": "24",
+      "overlap": "4",
+      "batch_size": ""
+    },
+    {
+      "cell": "aix-24c1g-default-coll-mlp-r2",
+      "samples_aggregate": "518400",
+      "samples_per_rank": "21600",
+      "solver_ranks": "24",
+      "overlap": "4",
+      "batch_size": "1000000"
+    },
+    {
+      "cell": "phydll-24c1g-default-mlp-r2",
+      "samples_aggregate": "518400",
+      "samples_per_rank": "21600",
+      "solver_ranks": "24",
+      "overlap": "4",
+      "batch_size": "1000000"
+    },
+    {
+      "cell": "smartsim-24c1g-shared-mlp-r2",
+      "samples_aggregate": "518400",
+      "samples_per_rank": "21600",
+      "solver_ranks": "24",
+      "overlap": "4",
+      "batch_size": ""
+    },
+    {
+      "cell": "aix-24c1g-default-coll-mlp-r3",
+      "samples_aggregate": "518400",
+      "samples_per_rank": "21600",
+      "solver_ranks": "24",
+      "overlap": "4",
+      "batch_size": "1000000"
+    },
+    {
+      "cell": "phydll-24c1g-default-mlp-r3",
+      "samples_aggregate": "518400",
+      "samples_per_rank": "21600",
+      "solver_ranks": "24",
+      "overlap": "4",
+      "batch_size": "1000000"
+    },
+    {
+      "cell": "smartsim-24c1g-shared-mlp-r3",
+      "samples_aggregate": "518400",
+      "samples_per_rank": "21600",
+      "solver_ranks": "24",
+      "overlap": "4",
+      "batch_size": ""
+    },
+    {
+      "cell": "aix-24p24c1g-default-coll-transformer-r1",
+      "samples_aggregate": "82944",
+      "samples_per_rank": "1728",
+      "solver_ranks": "48",
+      "overlap": "0",
+      "batch_size": "50000"
+    },
+    {
+      "cell": "phydll-24p24c1g-default-transformer-r1",
+      "samples_aggregate": "82944",
+      "samples_per_rank": "1728",
+      "solver_ranks": "48",
+      "overlap": "0",
+      "batch_size": "2048"
+    },
+    {
+      "cell": "smartsim-24p24c1g-shared-transformer-r1",
+      "samples_aggregate": "82944",
+      "samples_per_rank": "1728",
+      "solver_ranks": "48",
+      "overlap": "0",
+      "batch_size": ""
+    },
+    {
+      "cell": "aix-24p24c1g-default-coll-transformer-r2",
+      "samples_aggregate": "82944",
+      "samples_per_rank": "1728",
+      "solver_ranks": "48",
+      "overlap": "0",
+      "batch_size": "50000"
+    },
+    {
+      "cell": "phydll-24p24c1g-default-transformer-r2",
+      "samples_aggregate": "82944",
+      "samples_per_rank": "1728",
+      "solver_ranks": "48",
+      "overlap": "0",
+      "batch_size": "2048"
+    },
+    {
+      "cell": "smartsim-24p24c1g-shared-transformer-r2",
+      "samples_aggregate": "82944",
+      "samples_per_rank": "1728",
+      "solver_ranks": "48",
+      "overlap": "0",
+      "batch_size": ""
+    },
+    {
+      "cell": "aix-24p24c1g-default-coll-transformer-r3",
+      "samples_aggregate": "82944",
+      "samples_per_rank": "1728",
+      "solver_ranks": "48",
+      "overlap": "0",
+      "batch_size": "50000"
+    },
+    {
+      "cell": "phydll-24p24c1g-default-transformer-r3",
+      "samples_aggregate": "82944",
+      "samples_per_rank": "1728",
+      "solver_ranks": "48",
+      "overlap": "0",
+      "batch_size": "2048"
+    },
+    {
+      "cell": "smartsim-24p24c1g-shared-transformer-r3",
+      "samples_aggregate": "82944",
+      "samples_per_rank": "1728",
+      "solver_ranks": "48",
+      "overlap": "0",
+      "batch_size": ""
+    },
+    {
+      "cell": "aix-24p24c1g-default-coll-mlp-r1",
+      "samples_aggregate": "518400",
+      "samples_per_rank": "10800",
+      "solver_ranks": "48",
+      "overlap": "4",
+      "batch_size": "1000000"
+    },
+    {
+      "cell": "phydll-24p24c1g-default-mlp-r1",
+      "samples_aggregate": "518400",
+      "samples_per_rank": "10800",
+      "solver_ranks": "48",
+      "overlap": "4",
+      "batch_size": "1000000"
+    },
+    {
+      "cell": "smartsim-24p24c1g-shared-mlp-r1",
+      "samples_aggregate": "518400",
+      "samples_per_rank": "10800",
+      "solver_ranks": "48",
+      "overlap": "4",
+      "batch_size": ""
+    },
+    {
+      "cell": "aix-24p24c1g-default-coll-mlp-r2",
+      "samples_aggregate": "518400",
+      "samples_per_rank": "10800",
+      "solver_ranks": "48",
+      "overlap": "4",
+      "batch_size": "1000000"
+    },
+    {
+      "cell": "phydll-24p24c1g-default-mlp-r2",
+      "samples_aggregate": "518400",
+      "samples_per_rank": "10800",
+      "solver_ranks": "48",
+      "overlap": "4",
+      "batch_size": "1000000"
+    },
+    {
+      "cell": "smartsim-24p24c1g-shared-mlp-r2",
+      "samples_aggregate": "518400",
+      "samples_per_rank": "10800",
+      "solver_ranks": "48",
+      "overlap": "4",
+      "batch_size": ""
+    },
+    {
+      "cell": "aix-24p24c1g-default-coll-mlp-r3",
+      "samples_aggregate": "518400",
+      "samples_per_rank": "10800",
+      "solver_ranks": "48",
+      "overlap": "4",
+      "batch_size": "1000000"
+    },
+    {
+      "cell": "phydll-24p24c1g-default-mlp-r3",
+      "samples_aggregate": "518400",
+      "samples_per_rank": "10800",
+      "solver_ranks": "48",
+      "overlap": "4",
+      "batch_size": "1000000"
+    },
+    {
+      "cell": "smartsim-24p24c1g-shared-mlp-r3",
+      "samples_aggregate": "518400",
+      "samples_per_rank": "10800",
+      "solver_ranks": "48",
+      "overlap": "4",
+      "batch_size": ""
+    },
+    {
+      "cell": "aix-96c4g-default-coll-transformer-r1",
+      "samples_aggregate": "91008",
+      "samples_per_rank": "1008",
+      "solver_ranks": "96",
+      "overlap": "0",
+      "batch_size": "50000"
+    },
+    {
+      "cell": "phydll-96c4g-default-transformer-r1",
+      "samples_aggregate": "91008",
+      "samples_per_rank": "1008",
+      "solver_ranks": "96",
+      "overlap": "0",
+      "batch_size": "2048"
+    },
+    {
+      "cell": "smartsim-96c4g-shared-transformer-r1",
+      "samples_aggregate": "91008",
+      "samples_per_rank": "1008",
+      "solver_ranks": "96",
+      "overlap": "0",
+      "batch_size": ""
+    },
+    {
+      "cell": "aix-96c4g-default-coll-transformer-r2",
+      "samples_aggregate": "91008",
+      "samples_per_rank": "1008",
+      "solver_ranks": "96",
+      "overlap": "0",
+      "batch_size": "50000"
+    },
+    {
+      "cell": "phydll-96c4g-default-transformer-r2",
+      "samples_aggregate": "91008",
+      "samples_per_rank": "1008",
+      "solver_ranks": "96",
+      "overlap": "0",
+      "batch_size": "2048"
+    },
+    {
+      "cell": "smartsim-96c4g-shared-transformer-r2",
+      "samples_aggregate": "91008",
+      "samples_per_rank": "1008",
+      "solver_ranks": "96",
+      "overlap": "0",
+      "batch_size": ""
+    },
+    {
+      "cell": "aix-96c4g-default-coll-transformer-r3",
+      "samples_aggregate": "91008",
+      "samples_per_rank": "1008",
+      "solver_ranks": "96",
+      "overlap": "0",
+      "batch_size": "50000"
+    },
+    {
+      "cell": "phydll-96c4g-default-transformer-r3",
+      "samples_aggregate": "91008",
+      "samples_per_rank": "1008",
+      "solver_ranks": "96",
+      "overlap": "0",
+      "batch_size": "2048"
+    },
+    {
+      "cell": "smartsim-96c4g-shared-transformer-r3",
+      "samples_aggregate": "91008",
+      "samples_per_rank": "1008",
+      "solver_ranks": "96",
+      "overlap": "0",
+      "batch_size": ""
+    },
+    {
+      "cell": "aix-96c4g-default-coll-mlp-r1",
+      "samples_aggregate": "502200",
+      "samples_per_rank": "5400",
+      "solver_ranks": "96",
+      "overlap": "4",
+      "batch_size": "1000000"
+    },
+    {
+      "cell": "phydll-96c4g-default-mlp-r1",
+      "samples_aggregate": "502200",
+      "samples_per_rank": "5400",
+      "solver_ranks": "96",
+      "overlap": "4",
+      "batch_size": "1000000"
+    },
+    {
+      "cell": "smartsim-96c4g-shared-mlp-r1",
+      "samples_aggregate": "502200",
+      "samples_per_rank": "5400",
+      "solver_ranks": "96",
+      "overlap": "4",
+      "batch_size": ""
+    },
+    {
+      "cell": "aix-96c4g-default-coll-mlp-r2",
+      "samples_aggregate": "502200",
+      "samples_per_rank": "5400",
+      "solver_ranks": "96",
+      "overlap": "4",
+      "batch_size": "1000000"
+    },
+    {
+      "cell": "phydll-96c4g-default-mlp-r2",
+      "samples_aggregate": "502200",
+      "samples_per_rank": "5400",
+      "solver_ranks": "96",
+      "overlap": "4",
+      "batch_size": "1000000"
+    },
+    {
+      "cell": "smartsim-96c4g-shared-mlp-r2",
+      "samples_aggregate": "502200",
+      "samples_per_rank": "5400",
+      "solver_ranks": "96",
+      "overlap": "4",
+      "batch_size": ""
+    },
+    {
+      "cell": "aix-96c4g-default-coll-mlp-r3",
+      "samples_aggregate": "502200",
+      "samples_per_rank": "5400",
+      "solver_ranks": "96",
+      "overlap": "4",
+      "batch_size": "1000000"
+    },
+    {
+      "cell": "phydll-96c4g-default-mlp-r3",
+      "samples_aggregate": "502200",
+      "samples_per_rank": "5400",
+      "solver_ranks": "96",
+      "overlap": "4",
+      "batch_size": "1000000"
+    },
+    {
+      "cell": "smartsim-96c4g-shared-mlp-r3",
+      "samples_aggregate": "502200",
+      "samples_per_rank": "5400",
+      "solver_ranks": "96",
+      "overlap": "4",
+      "batch_size": ""
+    },
+    {
+      "cell": "aix-96p96c4g-default-coll-transformer-r1",
+      "samples_aggregate": "97848",
+      "samples_per_rank": "540",
+      "solver_ranks": "192",
+      "overlap": "0",
+      "batch_size": "50000"
+    },
+    {
+      "cell": "phydll-96p96c4g-default-transformer-r1",
+      "samples_aggregate": "97848",
+      "samples_per_rank": "540",
+      "solver_ranks": "192",
+      "overlap": "0",
+      "batch_size": "2048"
+    },
+    {
+      "cell": "smartsim-96p96c4g-shared-transformer-r1",
+      "samples_aggregate": "97848",
+      "samples_per_rank": "540",
+      "solver_ranks": "192",
+      "overlap": "0",
+      "batch_size": ""
+    },
+    {
+      "cell": "aix-96p96c4g-default-coll-transformer-r2",
+      "samples_aggregate": "97848",
+      "samples_per_rank": "540",
+      "solver_ranks": "192",
+      "overlap": "0",
+      "batch_size": "50000"
+    },
+    {
+      "cell": "phydll-96p96c4g-default-transformer-r2",
+      "samples_aggregate": "97848",
+      "samples_per_rank": "540",
+      "solver_ranks": "192",
+      "overlap": "0",
+      "batch_size": "2048"
+    },
+    {
+      "cell": "smartsim-96p96c4g-shared-transformer-r2",
+      "samples_aggregate": "97848",
+      "samples_per_rank": "540",
+      "solver_ranks": "192",
+      "overlap": "0",
+      "batch_size": ""
+    },
+    {
+      "cell": "aix-96p96c4g-default-coll-transformer-r3",
+      "samples_aggregate": "97848",
+      "samples_per_rank": "540",
+      "solver_ranks": "192",
+      "overlap": "0",
+      "batch_size": "50000"
+    },
+    {
+      "cell": "phydll-96p96c4g-default-transformer-r3",
+      "samples_aggregate": "97848",
+      "samples_per_rank": "540",
+      "solver_ranks": "192",
+      "overlap": "0",
+      "batch_size": "2048"
+    },
+    {
+      "cell": "smartsim-96p96c4g-shared-transformer-r3",
+      "samples_aggregate": "97848",
+      "samples_per_rank": "540",
+      "solver_ranks": "192",
+      "overlap": "0",
+      "batch_size": ""
+    },
+    {
+      "cell": "aix-96p96c4g-default-coll-mlp-r1",
+      "samples_aggregate": "461700",
+      "samples_per_rank": "2640",
+      "solver_ranks": "192",
+      "overlap": "4",
+      "batch_size": "1000000"
+    },
+    {
+      "cell": "phydll-96p96c4g-default-mlp-r1",
+      "samples_aggregate": "461700",
+      "samples_per_rank": "2640",
+      "solver_ranks": "192",
+      "overlap": "4",
+      "batch_size": "1000000"
+    },
+    {
+      "cell": "smartsim-96p96c4g-shared-mlp-r1",
+      "samples_aggregate": "461700",
+      "samples_per_rank": "2640",
+      "solver_ranks": "192",
+      "overlap": "4",
+      "batch_size": ""
+    },
+    {
+      "cell": "aix-96p96c4g-default-coll-mlp-r2",
+      "samples_aggregate": "461700",
+      "samples_per_rank": "2640",
+      "solver_ranks": "192",
+      "overlap": "4",
+      "batch_size": "1000000"
+    },
+    {
+      "cell": "phydll-96p96c4g-default-mlp-r2",
+      "samples_aggregate": "461700",
+      "samples_per_rank": "2640",
+      "solver_ranks": "192",
+      "overlap": "4",
+      "batch_size": "1000000"
+    },
+    {
+      "cell": "smartsim-96p96c4g-shared-mlp-r2",
+      "samples_aggregate": "461700",
+      "samples_per_rank": "2640",
+      "solver_ranks": "192",
+      "overlap": "4",
+      "batch_size": ""
+    },
+    {
+      "cell": "aix-96p96c4g-default-coll-mlp-r3",
+      "samples_aggregate": "461700",
+      "samples_per_rank": "2640",
+      "solver_ranks": "192",
+      "overlap": "4",
+      "batch_size": "1000000"
+    },
+    {
+      "cell": "phydll-96p96c4g-default-mlp-r3",
+      "samples_aggregate": "461700",
+      "samples_per_rank": "2640",
+      "solver_ranks": "192",
+      "overlap": "4",
+      "batch_size": "1000000"
+    },
+    {
+      "cell": "smartsim-96p96c4g-shared-mlp-r3",
+      "samples_aggregate": "461700",
+      "samples_per_rank": "2640",
+      "solver_ranks": "192",
+      "overlap": "4",
+      "batch_size": ""
+    }
+  ]
+}
