@@ -1,0 +1,95 @@
+#!/usr/local_rwth/bin/zsh
+#SBATCH --account=xy12345
+#SBATCH --time=01:00:00
+#SBATCH --job-name="maia-hybrid"
+#SBATCH --output=output.%J.txt
+
+#m-AIA
+#SBATCH --partition=c23mm
+#SBATCH --nodes=7
+#SBATCH --ntasks-per-node=96
+#SBATCH --cpus-per-task=1
+#SBATCH --exclusive
+#SBATCH --job-name="maia-hybrid-cpu"
+
+#SBATCH hetjob
+
+#Transformer
+#SBATCH --partition=c23g
+#SBATCH --gres=gpu:4
+#SBATCH --nodes=1
+#SBATCH --ntasks-per-node=96
+#SBATCH --cpus-per-task=1
+#SBATCH --exclusive
+#SBATCH --job-name="maia-hybrid-gpu"
+
+# Usage:
+#   sbatch maia.job <SIZE> <CASE_FOLDER> <case_type>
+# where:
+#   <SIZE> is one of L, M, S, ML, or SH
+#   <CASE_FOLDER> is the relative folder path (e.g., "Actuated/L/W1000, L200, T20, A30 S")
+#   <case_type> is either "actuated" or "nonactuated"
+
+ROOT_DIR=$(pwd)
+SIZE=$1
+CASE_FOLDER=$2
+GPU_COUNT=4
+
+echo "Running case folder: $CASE_FOLDER, Size: $SIZE, Rootdir: $ROOT_DIR"
+
+
+# Change to the case directory
+#cd "$ROOT_DIR/$CASE_FOLDER"
+
+mkdir -p out
+mkdir -p auxdata
+
+sleep 2
+
+# Set GRID_SIZE and choose appropriate TOML and grid file based on SIZE.
+if [[ "$SIZE" == "L" ]]; then
+    GRID_SIZE="large"
+elif [[ "$SIZE" == "M" ]]; then
+    GRID_SIZE="medium"
+elif [[ "$SIZE" == "SH" ]]; then
+    GRID_SIZE="small_high"
+elif [[ "$SIZE" == "ML" ]]; then
+    GRID_SIZE="medium_low"
+elif [[ "$SIZE" == "S" ]]; then
+    GRID_SIZE="small"
+else
+    echo "Unknown size: $SIZE"
+    exit 1
+fi
+
+# Link the grid and toml files.
+ln -sf $REPO_DIR/input/MMCP_2026_Material/grid_les_medium.hdf5 .
+
+TOML_FILE="$REPO_DIR/input/properties_run_les_ref_medium.toml"
+
+# Create a temporary TOML file based on the actuated template.
+temp_toml="temp_$(basename $TOML_FILE)"
+cp "$TOML_FILE" "$temp_toml"
+
+fraction=$(echo "$CASE_FOLDER" | sed -E 's/.*(A[0-9,]+).*/\1/' | sed 's/,/./g')
+echo $fraction
+sed -i "s/^hostFraction *= *.*/hostFraction = \"$fraction\"/" "$temp_toml"
+# Use the temporary file as our TOML file.
+TOML_FILE="$temp_toml"
+
+ln -s "$REPO_DIR/input/MMCP_2026_Material/restart_les_init_${GRID_SIZE}.hdf5" "./out/restart_les_ref_${GRID_SIZE}.hdf5"
+
+# setup environment
+source $REPO_DIR/setup_env_claix23.sh
+
+#Setup Python env
+source $REPO_DIR/CPP-ML-Interface/extern/python/venv/bin/activate
+
+if [[ "$fraction" == "1.00" || "$fraction" == "1" ]]; then
+    echo "Running non-hybrid version because hostFraction is 1.00"
+    srun --export=ALL --het-group=0 --mpi=pmix --preserve-env --cpus-per-task=1 $REPO_DIR/maia/build_gnu_production/bin/maia ./"$(basename $TOML_FILE)" : --export=ALL --het-group=1 --mpi=pmix --preserve-env --cpus-per-task=1 $REPO_DIR/maia/build_gnu_production/bin/maia ./"$(basename $TOML_FILE)"
+else
+    echo "Running hybrid version with $GPU_COUNT GPUs"
+    srun --export=ALL --het-group=0 --mpi=pmix --preserve-env --cpus-per-task=1 $REPO_DIR/maia/build_gnu_production/bin/maia ./"$(basename $TOML_FILE)" : --export=ALL --het-group=1 --mpi=pmix --preserve-env --cpus-per-task=1 --gres=gpu:$GPU_COUNT $REPO_DIR/maia/build_gnu_production/bin/maia ./"$(basename $TOML_FILE)"
+fi
+#build_interface_aix_scorep_23b_hybrid_batch

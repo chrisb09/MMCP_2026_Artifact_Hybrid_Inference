@@ -44,3 +44,7 @@ ssdb_exp/
 analysis/direct_torch_runs/
 __pycache__/
 *.pyc
+input/MMCP_2026_Material/*
+data/*
+data_oldSlurm/*
+.venv

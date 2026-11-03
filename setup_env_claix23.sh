@@ -14,6 +14,10 @@ module load CUDA/12.4.0
 module load cuDNN/8.9.7.29-CUDA-12.4.0
 module load Score-P/8.4-CUDA-12.4.0
 
+export REPO_ROOT="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+
+REQ_FILE="$REPO_ROOT/requirements.txt"
+VENV_DIR="$REPO_ROOT/.venv"
 
 #module load foss/2024a
 #module load FFTW.MPI/3.3.10

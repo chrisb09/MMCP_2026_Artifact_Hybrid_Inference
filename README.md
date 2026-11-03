@@ -2,12 +2,6 @@
 
 This is supplemental material for the paper "Hybrid Inference Optimization for AI-Enhanced Turbulent Boundary Layer Simulation on Heterogeneous Systems" submitted to the MMCP 2026 workshop.
 
-!!! PLEASE NOTE !!!  
-
-This repository currently contains the source code of the finite volume solver from the public multi-physics solver framework m-AIA and the related libraries (AIxeleratorService, CPP-ML-Interface) to achieve the coupling with the TBL-Transformer model.
-Towards the conference/workshop data on January 26-29, 2026, we will update the documentation and add further instructions to reproduce the results shown in our paper qualitatively.
-
-!!! PLEASE NOTE !!! 
 
 ## Repository Structure
 - [CPP-ML-Interface](CPP-ML-Interface/): Source code of the ML-Module partially ported to C++ from [Fortran](https://github.com/RWTH-HPC/Fortran-ML-Interface). It also includes the [AIxeleratorService](https://github.com/RWTH-HPC/AIxeleratorService/tree/MMCP_2026) library for hybrid inference as a submodule.
@@ -59,3 +53,37 @@ To build the coupled m-AIA solver use the provided [install script](install-MAIA
 ./install-MAIA.sh
 ```
 Further information regarding m-AIA's build process can be found in the [README](maia/README.md).
+
+
+
+## Reproducing Results
+
+To reproduce the results shown in the paper, we provide an automated benchmark suite. Ensure that you have successfully built the solver (see **Installation**) before proceeding.
+
+### 1. Setup Benchmark Suite
+First, run the setup script with your SLURM account. This script performs the following actions:
+- Downloads the required large input files (grid, restart files) into the `input/` directory.
+- Sets up a Python virtual environment (`.venv`) with all necessary plotting dependencies.
+- Generates the complete directory structure for all experiments in `data/`.
+
+```bash
+# Replace <ACCOUNT> with your actual Slurm account (e.g., rwth1234)
+./create_benchmark_suite.sh <ACCOUNT>
+```
+
+### 2. Run Experiments
+
+Once the suite is set up, navigate to the data directory and execute the experiment runner. This will submit the jobs to the cluster.
+
+```bash
+cd data
+./run_all_experiments.sh
+```
+
+### 3. Generate Plots
+
+After the experiments have finished, you can generate the plots used in the paper by running:
+
+```bash
+./run_all_plotting.sh
+```
