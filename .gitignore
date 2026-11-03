@@ -48,3 +48,5 @@ input/MMCP_2026_Material/*
 data/*
 data_oldSlurm/*
 .venv
+# RedisAI pilot runtime directories; curated summaries remain trackable.
+/results/redisai_batching_pilot/[0-9]*.*/
