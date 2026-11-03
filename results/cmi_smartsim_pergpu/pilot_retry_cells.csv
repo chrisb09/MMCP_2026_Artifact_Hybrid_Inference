@@ -1,2 +1,3 @@
 cell,original_jobid,retry_jobid,original_timeout_seconds,retry_timeout_seconds,retry_manifest,reason
 smartsim-96p96c4g-pergpu-transformer-r1,5109331,5112134,300,600,results/cmi_smartsim_pergpu/campaign_20261018T044023Z_qZ4xw3/manifest.csv,all seven inference calls and final output completed; outer srun deadline expired near teardown after substantial startup overhead
+smartsim-96p96c4g-pergpu-transformer-r1,5112134,5297612,600,600,results/cmi_smartsim_pergpu/campaign_20261028T180848Z_lmtc8m/manifest.csv,second retry after adding --exclusive to the second hetjob component; 5112134 completed the workload but component 1 was Exclusive=NO

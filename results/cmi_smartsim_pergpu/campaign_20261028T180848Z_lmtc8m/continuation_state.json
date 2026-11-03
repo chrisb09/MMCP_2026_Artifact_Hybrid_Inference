@@ -1,0 +1,186 @@
+{
+  "manifest": "/rwthfs/rz/cluster/hpcwork/ro092286/MMCP_2026_Artifact_Hybrid_Inference/results/cmi_smartsim_pergpu/campaign_20261017T211347Z_kal3PM/manifest.csv",
+  "jobids": [
+    "5109330",
+    "5297612"
+  ],
+  "created_at": "2026-10-28T18:09:24.093919+00:00",
+  "deadline_epoch": 1793297364.093948,
+  "batches": [
+    {
+      "model": "transformer",
+      "expected_runs": 4,
+      "command": [
+        "bash",
+        "/rwthfs/rz/cluster/hpcwork/ro092286/MMCP_2026_Artifact_Hybrid_Inference/slurm/submit_cmi_bench_smartsim_pergpu.sh"
+      ],
+      "environment": {
+        "MODELS": "transformer",
+        "FIRST_REP": "2",
+        "REPS": "3",
+        "PLACEMENTS": "96c4g 96p96c4g",
+        "DRY_RUN": "0",
+        "CASE_TIMEOUT_SECONDS": "600",
+        "CMI_PERGPU_CAMPAIGN_ROOT": "/rwthfs/rz/cluster/hpcwork/ro092286/MMCP_2026_Artifact_Hybrid_Inference/results/cmi_smartsim_pergpu"
+      },
+      "started": true,
+      "started_at": "2026-10-29T09:01:47.124000+00:00",
+      "stdout": "Campaign manifest: /rwthfs/rz/cluster/hpcwork/ro092286/MMCP_2026_Artifact_Hybrid_Inference/results/cmi_smartsim_pergpu/campaign_20261029T090147Z_V6Q7XJ/manifest.csv\n",
+      "stderr": "sbatch: [I] REMINDER: This project is allowed to use the new CLAIX-2025   c25g   partition!\nsbatch: [I]           Wait times for CLAIX-2025 are significantly shorter. For more details:\nsbatch: [I]           https://help.itc.rwth-aachen.de/service/rhr4fjjutttf/article/783f1418454e4cac84e4a230060b351b/\nsbatch: [I] REMINDER: This project is allowed to use the new CLAIX-2025   c25g   partition!\nsbatch: [I]           Wait times for CLAIX-2025 are significantly shorter. For more details:\nsbatch: [I]           https://help.itc.rwth-aachen.de/service/rhr4fjjutttf/article/783f1418454e4cac84e4a230060b351b/\nsbatch: 0: [I] REMINDER: This project is allowed to use the new CLAIX-2025   c25g   partition!\nsbatch: 0: [I]           Wait times for CLAIX-2025 are significantly shorter. For more details:\nsbatch: 0: [I]           https://help.itc.rwth-aachen.de/service/rhr4fjjutttf/article/783f1418454e4cac84e4a230060b351b/\nsbatch: 1: [I] REMINDER: This project is allowed to use the new CLAIX-2025   c25g   partition!\nsbatch: 1: [I]           Wait times for CLAIX-2025 are significantly shorter. For more details:\nsbatch: 1: [I]           https://help.itc.rwth-aachen.de/service/rhr4fjjutttf/article/783f1418454e4cac84e4a230060b351b/\nsbatch: 0: [I] REMINDER: This project is allowed to use the new CLAIX-2025   c25g   partition!\nsbatch: 0: [I]           Wait times for CLAIX-2025 are significantly shorter. For more details:\nsbatch: 0: [I]           https://help.itc.rwth-aachen.de/service/rhr4fjjutttf/article/783f1418454e4cac84e4a230060b351b/\nsbatch: 1: [I] REMINDER: This project is allowed to use the new CLAIX-2025   c25g   partition!\nsbatch: 1: [I]           Wait times for CLAIX-2025 are significantly shorter. For more details:\nsbatch: 1: [I]           https://help.itc.rwth-aachen.de/service/rhr4fjjutttf/article/783f1418454e4cac84e4a230060b351b/\n",
+      "returncode": 0,
+      "finished_at": "2026-10-29T09:01:53.735683+00:00",
+      "submitted_manifest_paths": [
+        "/rwthfs/rz/cluster/hpcwork/ro092286/MMCP_2026_Artifact_Hybrid_Inference/results/cmi_smartsim_pergpu/campaign_20261029T090147Z_V6Q7XJ/manifest.csv"
+      ]
+    },
+    {
+      "model": "mlp",
+      "expected_runs": 6,
+      "command": [
+        "bash",
+        "/rwthfs/rz/cluster/hpcwork/ro092286/MMCP_2026_Artifact_Hybrid_Inference/slurm/submit_cmi_bench_smartsim_pergpu.sh"
+      ],
+      "environment": {
+        "MODELS": "mlp",
+        "FIRST_REP": "1",
+        "REPS": "3",
+        "PLACEMENTS": "96c4g 96p96c4g",
+        "DRY_RUN": "0",
+        "CASE_TIMEOUT_SECONDS": "600",
+        "CMI_PERGPU_CAMPAIGN_ROOT": "/rwthfs/rz/cluster/hpcwork/ro092286/MMCP_2026_Artifact_Hybrid_Inference/results/cmi_smartsim_pergpu"
+      },
+      "started": true,
+      "started_at": "2026-10-29T09:01:53.751524+00:00",
+      "stdout": "Campaign manifest: /rwthfs/rz/cluster/hpcwork/ro092286/MMCP_2026_Artifact_Hybrid_Inference/results/cmi_smartsim_pergpu/campaign_20261029T090153Z_IC40Ee/manifest.csv\n",
+      "stderr": "sbatch: [I] REMINDER: This project is allowed to use the new CLAIX-2025   c25g   partition!\nsbatch: [I]           Wait times for CLAIX-2025 are significantly shorter. For more details:\nsbatch: [I]           https://help.itc.rwth-aachen.de/service/rhr4fjjutttf/article/783f1418454e4cac84e4a230060b351b/\nsbatch: [I] REMINDER: This project is allowed to use the new CLAIX-2025   c25g   partition!\nsbatch: [I]           Wait times for CLAIX-2025 are significantly shorter. For more details:\nsbatch: [I]           https://help.itc.rwth-aachen.de/service/rhr4fjjutttf/article/783f1418454e4cac84e4a230060b351b/\nsbatch: [I] REMINDER: This project is allowed to use the new CLAIX-2025   c25g   partition!\nsbatch: [I]           Wait times for CLAIX-2025 are significantly shorter. For more details:\nsbatch: [I]           https://help.itc.rwth-aachen.de/service/rhr4fjjutttf/article/783f1418454e4cac84e4a230060b351b/\nsbatch: 0: [I] REMINDER: This project is allowed to use the new CLAIX-2025   c25g   partition!\nsbatch: 0: [I]           Wait times for CLAIX-2025 are significantly shorter. For more details:\nsbatch: 0: [I]           https://help.itc.rwth-aachen.de/service/rhr4fjjutttf/article/783f1418454e4cac84e4a230060b351b/\nsbatch: 1: [I] REMINDER: This project is allowed to use the new CLAIX-2025   c25g   partition!\nsbatch: 1: [I]           Wait times for CLAIX-2025 are significantly shorter. For more details:\nsbatch: 1: [I]           https://help.itc.rwth-aachen.de/service/rhr4fjjutttf/article/783f1418454e4cac84e4a230060b351b/\nsbatch: 0: [I] REMINDER: This project is allowed to use the new CLAIX-2025   c25g   partition!\nsbatch: 0: [I]           Wait times for CLAIX-2025 are significantly shorter. For more details:\nsbatch: 0: [I]           https://help.itc.rwth-aachen.de/service/rhr4fjjutttf/article/783f1418454e4cac84e4a230060b351b/\nsbatch: 1: [I] REMINDER: This project is allowed to use the new CLAIX-2025   c25g   partition!\nsbatch: 1: [I]           Wait times for CLAIX-2025 are significantly shorter. For more details:\nsbatch: 1: [I]           https://help.itc.rwth-aachen.de/service/rhr4fjjutttf/article/783f1418454e4cac84e4a230060b351b/\nsbatch: 0: [I] REMINDER: This project is allowed to use the new CLAIX-2025   c25g   partition!\nsbatch: 0: [I]           Wait times for CLAIX-2025 are significantly shorter. For more details:\nsbatch: 0: [I]           https://help.itc.rwth-aachen.de/service/rhr4fjjutttf/article/783f1418454e4cac84e4a230060b351b/\nsbatch: 1: [I] REMINDER: This project is allowed to use the new CLAIX-2025   c25g   partition!\nsbatch: 1: [I]           Wait times for CLAIX-2025 are significantly shorter. For more details:\nsbatch: 1: [I]           https://help.itc.rwth-aachen.de/service/rhr4fjjutttf/article/783f1418454e4cac84e4a230060b351b/\n",
+      "returncode": 0,
+      "finished_at": "2026-10-29T09:01:57.165654+00:00",
+      "submitted_manifest_paths": [
+        "/rwthfs/rz/cluster/hpcwork/ro092286/MMCP_2026_Artifact_Hybrid_Inference/results/cmi_smartsim_pergpu/campaign_20261029T090153Z_IC40Ee/manifest.csv"
+      ]
+    }
+  ],
+  "launch_started": true,
+  "original_manifest": "/rwthfs/rz/cluster/hpcwork/ro092286/MMCP_2026_Artifact_Hybrid_Inference/results/cmi_smartsim_pergpu/campaign_20261017T211347Z_kal3PM/manifest.csv",
+  "retry_manifest": "/rwthfs/rz/cluster/hpcwork/ro092286/MMCP_2026_Artifact_Hybrid_Inference/results/cmi_smartsim_pergpu/campaign_20261028T180848Z_lmtc8m/manifest.csv",
+  "original_jobids": [
+    "5109330",
+    "5109331"
+  ],
+  "effective_jobids": [
+    "5109330",
+    "5297612"
+  ],
+  "retry_authorization": "Explicit --pilot-retry-manifest approval of failed heterogeneous pilot replacement; original failure reviewed by caller, not re-polled",
+  "pid": 350735,
+  "invoked_at": "2026-10-28T18:09:24.093964+00:00",
+  "status": "submitted",
+  "sacct_command": [
+    "sacct",
+    "-n",
+    "-P",
+    "-j",
+    "5109330,5297612",
+    "--format=JobIDRaw,State,ExitCode"
+  ],
+  "updated_at": "2026-10-29T09:01:57.186079+00:00",
+  "sacct_stdout": "5109330|COMPLETED|0:0\n5109330.batch|COMPLETED|0:0\n5109330.extern|COMPLETED|0:0\n5109330.0|COMPLETED|0:0\n5297612|COMPLETED|0:0\n5297612.batch|COMPLETED|0:0\n5297612.extern|COMPLETED|0:0\n5297612.5|COMPLETED|0:0\n5297613|COMPLETED|0:0\n5297613.extern|COMPLETED|0:0\n5297613.0|COMPLETED|0:0\n5297613.1|COMPLETED|0:0\n5297613.2|COMPLETED|0:0\n5297613.3|COMPLETED|0:0\n5297613.4|COMPLETED|0:0\n5297613.5|COMPLETED|0:0\n",
+  "sacct_stderr": "",
+  "checked_at": "2026-10-29T09:01:43.260070+00:00",
+  "pilot_states": {
+    "5109330": {
+      "state": "COMPLETED",
+      "exit_code": "0:0"
+    },
+    "5297612": {
+      "state": "COMPLETED",
+      "exit_code": "0:0"
+    }
+  },
+  "validation_report": {
+    "manifest": "/rwthfs/rz/cluster/hpcwork/ro092286/MMCP_2026_Artifact_Hybrid_Inference/results/cmi_smartsim_pergpu/campaign_20261017T211347Z_kal3PM/manifest.csv",
+    "retry_manifest": "/rwthfs/rz/cluster/hpcwork/ro092286/MMCP_2026_Artifact_Hybrid_Inference/results/cmi_smartsim_pergpu/campaign_20261028T180848Z_lmtc8m/manifest.csv",
+    "baseline": "/rwthfs/rz/cluster/hpcwork/ro092286/MMCP_2026_Artifact_Hybrid_Inference/results/cmi_bench_consolidated/runs.csv",
+    "accepted": [
+      {
+        "cell": "smartsim-96c4g-pergpu-transformer-r1",
+        "jobid": "5109330",
+        "run_dir": "/rwthfs/rz/cluster/hpcwork/ro092286/MMCP_2026_Artifact_Hybrid_Inference/scratch/cmi_smartsim_pergpu/smartsim_gpu_5109330_eu1djA",
+        "inferences": 7,
+        "measured": 5,
+        "workload": {
+          "cubes_per_rank": 336,
+          "samples_per_rank": 1008,
+          "cubes_aggregate": 30336,
+          "samples_aggregate": 91008,
+          "workload_solver_ranks": 96
+        },
+        "hashes": {
+          "maia": "3db91ef1f3ba666a3676043e0d168d1ff53dcf65a9e6012dd3996b3d137b35f6",
+          "transformer_inference_scripted_fw2.pt": "bd2498fc594f73e4bad1088efa7522495e2289b85a853d2f3c7e081e41842147",
+          "properties.toml": "6e29d32013d4de502ab9f425e417c60f1146db529a65e83099cedcd909c8a8bd",
+          "config_smartsim.toml": "016855e3185ce5546b53c51e90fa523a32c3290758428515202ff4a198aa62cd",
+          "smartsim_controller.py": "1640b8042bc9c98857ea3c0a35d5fac4dc878f4dd2d18f964e947c19d4cc54ab"
+        },
+        "resource_peaks_mib": {
+          "NODE_RAM_PEAK_MIB_n23g0004": 83098.0,
+          "GPU_VRAM_PEAK_MIB_n23g0004_gpu0": 3380.0,
+          "GPU_VRAM_PEAK_MIB_n23g0004_gpu1": 3448.0,
+          "GPU_VRAM_PEAK_MIB_n23g0004_gpu2": 3320.0,
+          "GPU_VRAM_PEAK_MIB_n23g0004_gpu3": 3354.0
+        },
+        "provider_leader_log_scope": "MPI rank zero only; other leaders suppressed by logging.hpp",
+        "inferred_leader_ranks": [
+          0,
+          24,
+          48,
+          72
+        ]
+      },
+      {
+        "cell": "smartsim-96p96c4g-pergpu-transformer-r1",
+        "jobid": "5297612",
+        "run_dir": "/rwthfs/rz/cluster/hpcwork/ro092286/MMCP_2026_Artifact_Hybrid_Inference/scratch/cmi_smartsim_pergpu/smartsim-96p96c4g-pergpu-transformer-r1_5297612_GjO9VS",
+        "inferences": 7,
+        "measured": 5,
+        "workload": {
+          "cubes_per_rank": 180,
+          "samples_per_rank": 540,
+          "cubes_aggregate": 32616,
+          "samples_aggregate": 97848,
+          "workload_solver_ranks": 192
+        },
+        "hashes": {
+          "maia": "3db91ef1f3ba666a3676043e0d168d1ff53dcf65a9e6012dd3996b3d137b35f6",
+          "transformer_inference_scripted_fw2.pt": "bd2498fc594f73e4bad1088efa7522495e2289b85a853d2f3c7e081e41842147",
+          "properties.toml": "6e29d32013d4de502ab9f425e417c60f1146db529a65e83099cedcd909c8a8bd",
+          "config_smartsim.toml": "016855e3185ce5546b53c51e90fa523a32c3290758428515202ff4a198aa62cd",
+          "smartsim_controller.py": "1640b8042bc9c98857ea3c0a35d5fac4dc878f4dd2d18f964e947c19d4cc54ab"
+        },
+        "resource_peaks_mib": {
+          "NODE_RAM_PEAK_MIB_n23g0016": 76505.0,
+          "NODE_RAM_PEAK_MIB_n23g0015": 60778.0,
+          "GPU_VRAM_PEAK_MIB_n23g0016_gpu0": 2300.0,
+          "GPU_VRAM_PEAK_MIB_n23g0016_gpu1": 2300.0,
+          "GPU_VRAM_PEAK_MIB_n23g0016_gpu2": 2300.0,
+          "GPU_VRAM_PEAK_MIB_n23g0016_gpu3": 2300.0
+        },
+        "provider_leader_log_scope": "MPI rank zero only; other leaders suppressed by logging.hpp",
+        "inferred_leader_ranks": [
+          0,
+          48,
+          96,
+          144
+        ]
+      }
+    ],
+    "errors": [],
+    "valid": true
+  },
+  "finished_at": "2026-10-29T09:01:57.186013+00:00",
+  "total_runs_including_pilots": 12,
+  "submitted_manifest_paths": [
+    "/rwthfs/rz/cluster/hpcwork/ro092286/MMCP_2026_Artifact_Hybrid_Inference/results/cmi_smartsim_pergpu/campaign_20261029T090147Z_V6Q7XJ/manifest.csv",
+    "/rwthfs/rz/cluster/hpcwork/ro092286/MMCP_2026_Artifact_Hybrid_Inference/results/cmi_smartsim_pergpu/campaign_20261029T090153Z_IC40Ee/manifest.csv"
+  ]
+}

@@ -160,9 +160,15 @@ fi
 source "${project_dir}/slurm/cmi_smartsim_pergpu.sh"
 if [[ "${DEBUG_EXPORT:-0}" == 1 ]]; then
     mkdir debug_dumps
-    export MLCOUPLING_DEBUG_EXPORT=1 MLCOUPLING_DEBUG_ALL_RANKS=1
+    export MLCOUPLING_DEBUG_EXPORT=1
+    if [[ -n "${DEBUG_EXPORT_RANK:-}" ]]; then
+        # Single-rank export keeps calibration artifacts small.
+        export MLCOUPLING_DEBUG_ALL_RANKS=0 MLCOUPLING_DEBUG_RANK="${DEBUG_EXPORT_RANK}"
+    else
+        export MLCOUPLING_DEBUG_ALL_RANKS=1
+    fi
     export MLCOUPLING_DEBUG_EXPORT_DIR="${run_dir}/debug_dumps"
-    export MLCOUPLING_DEBUG_MAX_INFERENCES=2
+    export MLCOUPLING_DEBUG_MAX_INFERENCES="${MLCOUPLING_DEBUG_MAX_INFERENCES:-2}"
 fi
 
 {
@@ -192,6 +198,14 @@ fi
     printf 'BATCH_HOST=%s\n' "$(hostname -s 2>/dev/null || hostname)"
     cmi_smartsim_metadata 4 lo local 600
 } | tee run.info
+
+# Apply the opt-in SmartSim aggregation settings after config/layout handling and
+# before any solver starts. The helper records effective values in run.info.
+if [[ "${provider}" == SMARTSIM && -n "${SMARTSIM_BATCH_SIZE:-}" ]]; then
+    export SMARTSIM_CONFIG="${config_name}"
+    source "${project_dir}/slurm/inject_smartsim_aggregation.sh"
+    unset SMARTSIM_CONFIG
+fi
 
 # Confirm the allocated GPU is actually visible before inference.
 nvidia-smi -L > gpu_list.log 2>&1 || true

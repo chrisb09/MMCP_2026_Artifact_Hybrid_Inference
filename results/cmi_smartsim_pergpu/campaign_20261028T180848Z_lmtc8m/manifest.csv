@@ -1,0 +1,2 @@
+cell,jobid,placement,model,rep,tpq,status_dir,revision,dry_run,case_timeout_seconds
+smartsim-96p96c4g-pergpu-transformer-r1,5297612,96p96c4g,transformer,1,1,/rwthfs/rz/cluster/hpcwork/ro092286/MMCP_2026_Artifact_Hybrid_Inference/results/cmi_smartsim_pergpu/campaign_20261028T180848Z_lmtc8m/status,409151b8dfbd18fe3dffcdfd7ae6a14bc568fc41,0,600

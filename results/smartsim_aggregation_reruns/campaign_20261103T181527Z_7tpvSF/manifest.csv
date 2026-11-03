@@ -1,0 +1,13 @@
+cell,jobid,placement,model,rep,batch_size,min_batch_size,timeout_ms,revision,dry_run
+smartsim-24c1g-agg-mlp-r1,5421429,24c1g,mlp,1,45000,45000,1,409151b8dfbd18fe3dffcdfd7ae6a14bc568fc41,0
+smartsim-24c1g-agg-mlp-r2,5421431,24c1g,mlp,2,45000,45000,1,409151b8dfbd18fe3dffcdfd7ae6a14bc568fc41,0
+smartsim-24c1g-agg-mlp-r3,5421433,24c1g,mlp,3,45000,45000,1,409151b8dfbd18fe3dffcdfd7ae6a14bc568fc41,0
+smartsim-24p24c1g-agg-mlp-r1,5421437,24p24c1g,mlp,1,45000,45000,1,409151b8dfbd18fe3dffcdfd7ae6a14bc568fc41,0
+smartsim-24p24c1g-agg-mlp-r2,5421444,24p24c1g,mlp,2,45000,45000,1,409151b8dfbd18fe3dffcdfd7ae6a14bc568fc41,0
+smartsim-24p24c1g-agg-mlp-r3,5421448,24p24c1g,mlp,3,45000,45000,1,409151b8dfbd18fe3dffcdfd7ae6a14bc568fc41,0
+smartsim-96c4g-agg-mlp-r1,5421451,96c4g,mlp,1,45000,45000,1,409151b8dfbd18fe3dffcdfd7ae6a14bc568fc41,0
+smartsim-96c4g-agg-mlp-r2,5421453,96c4g,mlp,2,45000,45000,1,409151b8dfbd18fe3dffcdfd7ae6a14bc568fc41,0
+smartsim-96c4g-agg-mlp-r3,5421454,96c4g,mlp,3,45000,45000,1,409151b8dfbd18fe3dffcdfd7ae6a14bc568fc41,0
+smartsim-96p96c4g-agg-mlp-r1,5421456,96p96c4g,mlp,1,45000,45000,1,409151b8dfbd18fe3dffcdfd7ae6a14bc568fc41,0
+smartsim-96p96c4g-agg-mlp-r2,5421460,96p96c4g,mlp,2,45000,45000,1,409151b8dfbd18fe3dffcdfd7ae6a14bc568fc41,0
+smartsim-96p96c4g-agg-mlp-r3,5421464,96p96c4g,mlp,3,45000,45000,1,409151b8dfbd18fe3dffcdfd7ae6a14bc568fc41,0

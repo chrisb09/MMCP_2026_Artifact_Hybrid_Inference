@@ -2,7 +2,12 @@
 
 Recovery: original heterogeneous pilot 5109331 exhausted its 300-second command
 budget near teardown after completing all seven inference calls. Retry 5112134
-uses 600 seconds and is recorded in `pilot_retry_cells.csv`. See
+(600 s) completed the workload, but its second hetjob component reported
+`Exclusive=NO` because `--exclusive` preceded `#SBATCH hetjob`. A `sacct` query
+found no co-tenant jobs on either node during its window. The benchmark wrappers
+now request `--exclusive` for every component; second retry 5297612 is the
+effective gate. The chain is recorded in `pilot_retry_cells.csv`; see
+`campaign_20261028T180848Z_lmtc8m/recovery.md` and
 `campaign_20261018T044023Z_qZ4xw3/recovery.md` for evidence and the explicit
 `--pilot-retry-manifest` invocation. Original single-node pilot 5109330 passed
 validation and is retained; the original failed manifest and blocked state are

@@ -1,0 +1,84 @@
+# PhyDLL cap50000 reruns provenance
+campaign=/rwthfs/rz/cluster/hpcwork/ro092286/MMCP_2026_Artifact_Hybrid_Inference/results/phydll_cap50000_reruns/campaign_20261028T180740Z_n5AUNF
+date_utc=2026-10-28T18:07:40Z
+
+
+[repository: /rwthfs/rz/cluster/hpcwork/ro092286/MMCP_2026_Artifact_Hybrid_Inference]
+409151b8dfbd18fe3dffcdfd7ae6a14bc568fc41
+ M slurm/bench_group_het_24p24c1g.sbatch
+ M slurm/bench_group_het_96p96c4g.sbatch
+ M slurm/bench_het_24p24c1g.sbatch
+ M slurm/bench_het_96p96c4g.sbatch
+ M slurm/bench_smartsim_pergpu_het.sbatch
+ M slurm/cmi_bench_het_engine.sh
+ M slurm/run_cmi_smoke_gpu.sh
+?? results/phydll_cap50000_reruns/
+?? results/redisai_batching_pilot/
+?? results/smartsim_calibration/
+?? scripts/check_phydll_cap_correctness.py
+?? scripts/redisai_batching_pilot.py
+?? scripts/validate_phydll_cap50000_pilot.py
+?? slurm/check_phydll_cap_correctness.sbatch
+?? slurm/inject_smartsim_aggregation.sh
+?? slurm/redisai_batching_pilot.sbatch
+?? slurm/submit_phydll_cap50000_pilot.sh
+?? slurm/submit_phydll_cap50000_reruns.sh
+?? slurm/submit_smartsim_aggregation_reruns.sh
+?? slurm/submit_smartsim_calibration.sh
+?? tests/README_redisai_batching_pilot.md
+?? tests/test_phydll_cap50000_pilot.py
+?? tests/test_phydll_cap50000_reruns.py
+?? tests/test_redisai_batching_pilot.py
+?? tests/test_smartsim_calibration.py
+
+[repository: /rwthfs/rz/cluster/hpcwork/ro092286/MMCP_2026_Artifact_Hybrid_Inference/maia]
+409151b8dfbd18fe3dffcdfd7ae6a14bc568fc41
+ M ../slurm/bench_group_het_24p24c1g.sbatch
+ M ../slurm/bench_group_het_96p96c4g.sbatch
+ M ../slurm/bench_het_24p24c1g.sbatch
+ M ../slurm/bench_het_96p96c4g.sbatch
+ M ../slurm/bench_smartsim_pergpu_het.sbatch
+ M ../slurm/cmi_bench_het_engine.sh
+ M ../slurm/run_cmi_smoke_gpu.sh
+?? ../results/phydll_cap50000_reruns/
+?? ../results/redisai_batching_pilot/
+?? ../results/smartsim_calibration/
+?? ../scripts/check_phydll_cap_correctness.py
+?? ../scripts/redisai_batching_pilot.py
+?? ../scripts/validate_phydll_cap50000_pilot.py
+?? ../slurm/check_phydll_cap_correctness.sbatch
+?? ../slurm/inject_smartsim_aggregation.sh
+?? ../slurm/redisai_batching_pilot.sbatch
+?? ../slurm/submit_phydll_cap50000_pilot.sh
+?? ../slurm/submit_phydll_cap50000_reruns.sh
+?? ../slurm/submit_smartsim_aggregation_reruns.sh
+?? ../slurm/submit_smartsim_calibration.sh
+?? ../tests/README_redisai_batching_pilot.md
+?? ../tests/test_phydll_cap50000_pilot.py
+?? ../tests/test_phydll_cap50000_reruns.py
+?? ../tests/test_redisai_batching_pilot.py
+?? ../tests/test_smartsim_calibration.py
+
+[repository: /rwthfs/rz/cluster/hpcwork/ro092286/MMCP_2026_Artifact_Hybrid_Inference/CPP-ML-Interface]
+1ddcf2f2d7537b7d9eb2dd8bdf1dea59ea57b5da
+
+[repository: /rwthfs/rz/cluster/hpcwork/ro092286/MMCP_2026_Artifact_Hybrid_Inference/CPP-ML-Interface/extern/phydll]
+05e0e292e829d806b4b6477eda65c87474f31831
+
+[source diffs]
+diff: /rwthfs/rz/cluster/hpcwork/ro092286/MMCP_2026_Artifact_Hybrid_Inference/results/phydll_cap50000_reruns/campaign_20261028T180740Z_n5AUNF/root.diff
+diff: /rwthfs/rz/cluster/hpcwork/ro092286/MMCP_2026_Artifact_Hybrid_Inference/results/phydll_cap50000_reruns/campaign_20261028T180740Z_n5AUNF/maia.diff
+diff: /rwthfs/rz/cluster/hpcwork/ro092286/MMCP_2026_Artifact_Hybrid_Inference/results/phydll_cap50000_reruns/campaign_20261028T180740Z_n5AUNF/cmi.diff
+diff: /rwthfs/rz/cluster/hpcwork/ro092286/MMCP_2026_Artifact_Hybrid_Inference/results/phydll_cap50000_reruns/campaign_20261028T180740Z_n5AUNF/phydll.diff
+
+[input file sha256]
+bd2498fc594f73e4bad1088efa7522495e2289b85a853d2f3c7e081e41842147  /rwthfs/rz/cluster/hpcwork/ro092286/MMCP_2026_Artifact_Hybrid_Inference/input/transformer_inference_scripted_fw2.pt
+623d1043125001f6512db416506c370b6d20006bafba1c6ad2e64c33eaf82ac4  /rwthfs/rz/cluster/hpcwork/ro092286/MMCP_2026_Artifact_Hybrid_Inference/input/mmcp_test_mlp_m5_cpu.pt
+dc5a8f3bbfd276aab4cbec6c5bab56168f4b4ce988bbd6cb4c1dc84cb680b8b0  /rwthfs/rz/cluster/hpcwork/ro092286/MMCP_2026_Artifact_Hybrid_Inference/input/properties_run_les_ref_medium.toml
+ece8dc8809cd8bbc678664ab6f73c35cd23b6ffce2dc6c30be5685b0768210f7  /rwthfs/rz/cluster/hpcwork/ro092286/MMCP_2026_Artifact_Hybrid_Inference/config_phydll.toml
+3eb0ccb8f99e5f3d7950184ede459384ff1f9e736e827137f5d680888c1ae88e  /rwthfs/rz/cluster/hpcwork/ro092286/MMCP_2026_Artifact_Hybrid_Inference/slurm/run_cmi_smoke_gpu.sh
+c5bdb513b0bd3a8ecf4112a080514c685692a03c42ed5552cd0330883e484b80  /rwthfs/rz/cluster/hpcwork/ro092286/MMCP_2026_Artifact_Hybrid_Inference/slurm/bench_het_24p24c1g.sbatch
+54df86e6dae81174aadcbc6d1b63ba9e3dedbdcc50d297d1ccee5253c7fa95f3  /rwthfs/rz/cluster/hpcwork/ro092286/MMCP_2026_Artifact_Hybrid_Inference/slurm/bench_het_96p96c4g.sbatch
+3db91ef1f3ba666a3676043e0d168d1ff53dcf65a9e6012dd3996b3d137b35f6  /rwthfs/rz/cluster/hpcwork/ro092286/MMCP_2026_Artifact_Hybrid_Inference/maia/build_gnu_production/bin/maia
+missing=/rwthfs/rz/cluster/hpcwork/ro092286/MMCP_2026_Artifact_Hybrid_Inference/maia/build_gnu_production/CPP-ML-Interface/dl_clients/phydll_dl_client
+21ada44fbf94aa9dd4a1466b2a0d8233f761a461022a74bcec5d1e2df01c05bb  /rwthfs/rz/cluster/hpcwork/ro092286/MMCP_2026_Artifact_Hybrid_Inference/maia/build_gnu_production/bin/phydll_dl_client

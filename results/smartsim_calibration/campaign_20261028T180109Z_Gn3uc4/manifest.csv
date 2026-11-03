@@ -1,0 +1,7 @@
+cell,jobid,placement,model,batch_size,min_batch_size,timeout_ms,revision,dry_run
+smartsim-24c1g-calib-transformer-ctrl,5297336,24c1g,transformer,0,0,0,409151b8dfbd18fe3dffcdfd7ae6a14bc568fc41,0
+smartsim-24c1g-calib-transformer-t1ms,5297337,24c1g,transformer,7000,7000,1,409151b8dfbd18fe3dffcdfd7ae6a14bc568fc41,0
+smartsim-24c1g-calib-transformer-t5ms,5297338,24c1g,transformer,7000,7000,5,409151b8dfbd18fe3dffcdfd7ae6a14bc568fc41,0
+smartsim-24c1g-calib-mlp-ctrl,5297339,24c1g,mlp,0,0,0,409151b8dfbd18fe3dffcdfd7ae6a14bc568fc41,0
+smartsim-24c1g-calib-mlp-t1ms,5297340,24c1g,mlp,45000,45000,1,409151b8dfbd18fe3dffcdfd7ae6a14bc568fc41,0
+smartsim-24c1g-calib-mlp-t5ms,5297341,24c1g,mlp,45000,45000,5,409151b8dfbd18fe3dffcdfd7ae6a14bc568fc41,0

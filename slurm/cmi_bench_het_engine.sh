@@ -144,9 +144,15 @@ fi
 source "${project_dir}/slurm/cmi_smartsim_pergpu.sh"
 if [[ "${DEBUG_EXPORT:-0}" == 1 ]]; then
     mkdir debug_dumps
-    export MLCOUPLING_DEBUG_EXPORT=1 MLCOUPLING_DEBUG_ALL_RANKS=1
+    export MLCOUPLING_DEBUG_EXPORT=1
+    if [[ -n "${DEBUG_EXPORT_RANK:-}" ]]; then
+        # Single-rank export keeps calibration artifacts small.
+        export MLCOUPLING_DEBUG_ALL_RANKS=0 MLCOUPLING_DEBUG_RANK="${DEBUG_EXPORT_RANK}"
+    else
+        export MLCOUPLING_DEBUG_ALL_RANKS=1
+    fi
     export MLCOUPLING_DEBUG_EXPORT_DIR="${run_dir}/debug_dumps"
-    export MLCOUPLING_DEBUG_MAX_INFERENCES=2
+    export MLCOUPLING_DEBUG_MAX_INFERENCES="${MLCOUPLING_DEBUG_MAX_INFERENCES:-2}"
 fi
 
 {
@@ -180,6 +186,13 @@ fi
         printf 'HET_GPU_NODELIST=%s\n' "${SLURM_JOB_NODELIST_HET_GROUP_1:-unknown}"
     fi
 } | tee run.info
+
+# Apply the opt-in SmartSim aggregation settings before the MPMD launch.
+if [[ "${provider}" == SMARTSIM && -n "${SMARTSIM_BATCH_SIZE:-}" ]]; then
+    export SMARTSIM_CONFIG=config_smartsim.toml
+    source "${project_dir}/slurm/inject_smartsim_aggregation.sh"
+    unset SMARTSIM_CONFIG
+fi
 
 nvidia-smi -L > gpu_list.log 2>&1 || true
 

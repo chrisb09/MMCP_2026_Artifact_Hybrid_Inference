@@ -10,6 +10,7 @@
 #SBATCH --gres=gpu:4
 #SBATCH --mem-per-cpu=5G
 #SBATCH hetjob
+#SBATCH --exclusive
 #SBATCH --partition=c23g
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=96

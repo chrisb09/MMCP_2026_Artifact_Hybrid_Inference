@@ -1,0 +1,1 @@
+placement,model,variant,batch_size,min_batch_size,timeout_ms,enabled,mean_ms,stdev_ms,speedup_vs_ctrl,max_abs_diff,max_rel_diff,status,reason

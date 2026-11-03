@@ -76,3 +76,5 @@ python3.11 scripts/continue_cmi_smartsim_pergpu.py \
 This command can submit the already-authorized remaining ten cases after the
 validation gate. It is not a dry run. Failed pilots, invalid telemetry and
 ambiguous/partial submissions remain fail-closed.
+
+Superseded by second retry `5297612` in `campaign_20261028T180848Z_lmtc8m` after the hetjob `--exclusive` fix.

@@ -45,8 +45,13 @@ DB steps retain mem=0, ib0 for heterogeneous networking, overlap/exact, solver
 wait=0 for heterogeneous runs, a recorded 600-second case timeout and bounded cleanup.
 The original two pilots used 300 seconds. Heterogeneous pilot 5109331 completed
 its seven calls but exhausted that outer srun budget near teardown; retry 5112134
-uses 600 seconds. See results/cmi_smartsim_pergpu/pilot_retry_cells.csv and the
-retry campaign's recovery.md. The validator accepts the original implicit
+(600 s) completed the workload, but its second component reported Exclusive=NO
+because --exclusive was placed before "#SBATCH hetjob". The wrappers now repeat
+--exclusive after every hetjob split, and second retry 5297612 is the effective
+pilot. Historical het runs from the old wrapper record Exclusive=NO on component
+1; verify co-tenancy before comparing their timings. The 5112134 window had no
+co-tenants on either node. See results/cmi_smartsim_pergpu/pilot_retry_cells.csv
+and the retry campaigns' recovery.md. The validator accepts the original implicit
 300-second contract or the explicitly recorded new bound, not arbitrary timeouts.
 
 GPU isolation handshake (controller maintained separately): runners export

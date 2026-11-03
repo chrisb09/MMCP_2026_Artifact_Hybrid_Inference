@@ -1,0 +1,5 @@
+cell,jobid,placement,model,rep,tpq,status_dir,revision,dry_run,case_timeout_seconds
+smartsim-96c4g-pergpu-transformer-r2,5309465,96c4g,transformer,2,4,/rwthfs/rz/cluster/hpcwork/ro092286/MMCP_2026_Artifact_Hybrid_Inference/results/cmi_smartsim_pergpu/campaign_20261029T090147Z_V6Q7XJ/status,409151b8dfbd18fe3dffcdfd7ae6a14bc568fc41,0,600
+smartsim-96c4g-pergpu-transformer-r3,5309466,96c4g,transformer,3,4,/rwthfs/rz/cluster/hpcwork/ro092286/MMCP_2026_Artifact_Hybrid_Inference/results/cmi_smartsim_pergpu/campaign_20261029T090147Z_V6Q7XJ/status,409151b8dfbd18fe3dffcdfd7ae6a14bc568fc41,0,600
+smartsim-96p96c4g-pergpu-transformer-r2,5309467,96p96c4g,transformer,2,1,/rwthfs/rz/cluster/hpcwork/ro092286/MMCP_2026_Artifact_Hybrid_Inference/results/cmi_smartsim_pergpu/campaign_20261029T090147Z_V6Q7XJ/status,409151b8dfbd18fe3dffcdfd7ae6a14bc568fc41,0,600
+smartsim-96p96c4g-pergpu-transformer-r3,5309469,96p96c4g,transformer,3,1,/rwthfs/rz/cluster/hpcwork/ro092286/MMCP_2026_Artifact_Hybrid_Inference/results/cmi_smartsim_pergpu/campaign_20261029T090147Z_V6Q7XJ/status,409151b8dfbd18fe3dffcdfd7ae6a14bc568fc41,0,600

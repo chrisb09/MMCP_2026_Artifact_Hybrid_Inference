@@ -1,0 +1,133 @@
+diff --git a/slurm/bench_group_het_24p24c1g.sbatch b/slurm/bench_group_het_24p24c1g.sbatch
+index 1427d0a..25f482f 100644
+--- a/slurm/bench_group_het_24p24c1g.sbatch
++++ b/slurm/bench_group_het_24p24c1g.sbatch
+@@ -19,6 +19,7 @@
+ #SBATCH --mem-per-cpu=5G
+ 
+ #SBATCH hetjob
++#SBATCH --exclusive
+ 
+ #SBATCH --partition=c23g
+ #SBATCH --nodes=1
+diff --git a/slurm/bench_group_het_96p96c4g.sbatch b/slurm/bench_group_het_96p96c4g.sbatch
+index 560e8de..ff1f666 100644
+--- a/slurm/bench_group_het_96p96c4g.sbatch
++++ b/slurm/bench_group_het_96p96c4g.sbatch
+@@ -19,6 +19,7 @@
+ #SBATCH --mem-per-cpu=5G
+ 
+ #SBATCH hetjob
++#SBATCH --exclusive
+ 
+ #SBATCH --partition=c23g
+ #SBATCH --nodes=1
+diff --git a/slurm/bench_het_24p24c1g.sbatch b/slurm/bench_het_24p24c1g.sbatch
+index 7da1632..064a1e6 100755
+--- a/slurm/bench_het_24p24c1g.sbatch
++++ b/slurm/bench_het_24p24c1g.sbatch
+@@ -16,6 +16,7 @@
+ #SBATCH --mem-per-cpu=5G
+ 
+ #SBATCH hetjob
++#SBATCH --exclusive
+ 
+ #SBATCH --partition=c23g
+ #SBATCH --nodes=1
+diff --git a/slurm/bench_het_96p96c4g.sbatch b/slurm/bench_het_96p96c4g.sbatch
+index 4a5e372..4646090 100755
+--- a/slurm/bench_het_96p96c4g.sbatch
++++ b/slurm/bench_het_96p96c4g.sbatch
+@@ -16,6 +16,7 @@
+ #SBATCH --mem-per-cpu=5G
+ 
+ #SBATCH hetjob
++#SBATCH --exclusive
+ 
+ #SBATCH --partition=c23g
+ #SBATCH --nodes=1
+diff --git a/slurm/bench_smartsim_pergpu_het.sbatch b/slurm/bench_smartsim_pergpu_het.sbatch
+index f8f63fb..802437b 100755
+--- a/slurm/bench_smartsim_pergpu_het.sbatch
++++ b/slurm/bench_smartsim_pergpu_het.sbatch
+@@ -10,6 +10,7 @@
+ #SBATCH --gres=gpu:4
+ #SBATCH --mem-per-cpu=5G
+ #SBATCH hetjob
++#SBATCH --exclusive
+ #SBATCH --partition=c23g
+ #SBATCH --nodes=1
+ #SBATCH --ntasks-per-node=96
+diff --git a/slurm/cmi_bench_het_engine.sh b/slurm/cmi_bench_het_engine.sh
+index 799da5f..e82f187 100755
+--- a/slurm/cmi_bench_het_engine.sh
++++ b/slurm/cmi_bench_het_engine.sh
+@@ -144,9 +144,15 @@ fi
+ source "${project_dir}/slurm/cmi_smartsim_pergpu.sh"
+ if [[ "${DEBUG_EXPORT:-0}" == 1 ]]; then
+     mkdir debug_dumps
+-    export MLCOUPLING_DEBUG_EXPORT=1 MLCOUPLING_DEBUG_ALL_RANKS=1
++    export MLCOUPLING_DEBUG_EXPORT=1
++    if [[ -n "${DEBUG_EXPORT_RANK:-}" ]]; then
++        # Single-rank export keeps calibration artifacts small.
++        export MLCOUPLING_DEBUG_ALL_RANKS=0 MLCOUPLING_DEBUG_RANK="${DEBUG_EXPORT_RANK}"
++    else
++        export MLCOUPLING_DEBUG_ALL_RANKS=1
++    fi
+     export MLCOUPLING_DEBUG_EXPORT_DIR="${run_dir}/debug_dumps"
+-    export MLCOUPLING_DEBUG_MAX_INFERENCES=2
++    export MLCOUPLING_DEBUG_MAX_INFERENCES="${MLCOUPLING_DEBUG_MAX_INFERENCES:-2}"
+ fi
+ 
+ {
+@@ -181,6 +187,13 @@ fi
+     fi
+ } | tee run.info
+ 
++# Apply the opt-in SmartSim aggregation settings before the MPMD launch.
++if [[ "${provider}" == SMARTSIM && -n "${SMARTSIM_BATCH_SIZE:-}" ]]; then
++    export SMARTSIM_CONFIG=config_smartsim.toml
++    source "${project_dir}/slurm/inject_smartsim_aggregation.sh"
++    unset SMARTSIM_CONFIG
++fi
++
+ nvidia-smi -L > gpu_list.log 2>&1 || true
+ 
+ # Fold the per-node sampler peaks (written by cmi_node_sampler.sh on each node)
+diff --git a/slurm/run_cmi_smoke_gpu.sh b/slurm/run_cmi_smoke_gpu.sh
+index dc829d1..575175c 100644
+--- a/slurm/run_cmi_smoke_gpu.sh
++++ b/slurm/run_cmi_smoke_gpu.sh
+@@ -160,9 +160,15 @@ fi
+ source "${project_dir}/slurm/cmi_smartsim_pergpu.sh"
+ if [[ "${DEBUG_EXPORT:-0}" == 1 ]]; then
+     mkdir debug_dumps
+-    export MLCOUPLING_DEBUG_EXPORT=1 MLCOUPLING_DEBUG_ALL_RANKS=1
++    export MLCOUPLING_DEBUG_EXPORT=1
++    if [[ -n "${DEBUG_EXPORT_RANK:-}" ]]; then
++        # Single-rank export keeps calibration artifacts small.
++        export MLCOUPLING_DEBUG_ALL_RANKS=0 MLCOUPLING_DEBUG_RANK="${DEBUG_EXPORT_RANK}"
++    else
++        export MLCOUPLING_DEBUG_ALL_RANKS=1
++    fi
+     export MLCOUPLING_DEBUG_EXPORT_DIR="${run_dir}/debug_dumps"
+-    export MLCOUPLING_DEBUG_MAX_INFERENCES=2
++    export MLCOUPLING_DEBUG_MAX_INFERENCES="${MLCOUPLING_DEBUG_MAX_INFERENCES:-2}"
+ fi
+ 
+ {
+@@ -193,6 +199,14 @@ fi
+     cmi_smartsim_metadata 4 lo local 600
+ } | tee run.info
+ 
++# Apply the opt-in SmartSim aggregation settings after config/layout handling and
++# before any solver starts. The helper records effective values in run.info.
++if [[ "${provider}" == SMARTSIM && -n "${SMARTSIM_BATCH_SIZE:-}" ]]; then
++    export SMARTSIM_CONFIG="${config_name}"
++    source "${project_dir}/slurm/inject_smartsim_aggregation.sh"
++    unset SMARTSIM_CONFIG
++fi
++
+ # Confirm the allocated GPU is actually visible before inference.
+ nvidia-smi -L > gpu_list.log 2>&1 || true
+ printf 'CUDA_VISIBLE_DEVICES=%s\n' "${CUDA_VISIBLE_DEVICES:-unset}" >> run.info
