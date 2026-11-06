@@ -1,0 +1,13 @@
+cell,jobid,status,reason,measured_mean_ms,wall_seconds,cubes_per_rank,samples_per_rank,solver_ranks
+smartsim-24c1g-agg-transformer-r1,5421430,ok,,6727.130000,190,1152,3456,24
+smartsim-24c1g-agg-transformer-r2,5421432,ok,,6594.887500,106,1152,3456,24
+smartsim-24c1g-agg-transformer-r3,5421434,ok,,6810.287500,108,1152,3456,24
+smartsim-24p24c1g-agg-transformer-r1,5421435,ok,,6814.580000,94,576,1728,48
+smartsim-24p24c1g-agg-transformer-r2,5421441,ok,,6857.322500,179,576,1728,48
+smartsim-24p24c1g-agg-transformer-r3,5421446,ok,,6916.187500,94,576,1728,48
+smartsim-96c4g-agg-transformer-r1,5421450,ok,,2303.815000,174,336,1008,96
+smartsim-96c4g-agg-transformer-r2,5421452,ok,,2127.332500,141,336,1008,96
+smartsim-96c4g-agg-transformer-r3,5421455,ok,,2096.740000,143,336,1008,96
+smartsim-96p96c4g-agg-transformer-r1,5421458,ok,,4149.280000,207,180,540,192
+smartsim-96p96c4g-agg-transformer-r2,5421462,ok,,3971.030000,183,180,540,192
+smartsim-96p96c4g-agg-transformer-r3,5421466,ok,,3898.205000,183,180,540,192

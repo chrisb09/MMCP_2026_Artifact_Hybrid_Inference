@@ -1,25 +1,25 @@
 cell,jobid,status,reason,measured_mean_ms,wall_seconds,cubes_per_rank,samples_per_rank,solver_ranks
-phydll-24c1g-default-transformer-cap50000-r1,5297557,fail,run directory missing: /rwthfs/rz/cluster/hpcwork/ro092286/MMCP_2026_Artifact_Hybrid_Inference/scratch/phydll_cap50000_reruns/phydll-24c1g-default-transformer-cap50000-r1_5297557,,,,,
-phydll-24c1g-default-transformer-cap50000-r2,5297558,fail,run directory missing: /rwthfs/rz/cluster/hpcwork/ro092286/MMCP_2026_Artifact_Hybrid_Inference/scratch/phydll_cap50000_reruns/phydll-24c1g-default-transformer-cap50000-r2_5297558,,,,,
-phydll-24c1g-default-transformer-cap50000-r3,5297559,fail,run directory missing: /rwthfs/rz/cluster/hpcwork/ro092286/MMCP_2026_Artifact_Hybrid_Inference/scratch/phydll_cap50000_reruns/phydll-24c1g-default-transformer-cap50000-r3_5297559,,,,,
-phydll-24c1g-readiness-transformer-cap50000-r1,5297560,fail,run directory missing: /rwthfs/rz/cluster/hpcwork/ro092286/MMCP_2026_Artifact_Hybrid_Inference/scratch/phydll_cap50000_reruns/phydll-24c1g-readiness-transformer-cap50000-r1_5297560,,,,,
-phydll-24c1g-readiness-transformer-cap50000-r2,5297561,fail,run directory missing: /rwthfs/rz/cluster/hpcwork/ro092286/MMCP_2026_Artifact_Hybrid_Inference/scratch/phydll_cap50000_reruns/phydll-24c1g-readiness-transformer-cap50000-r2_5297561,,,,,
-phydll-24c1g-readiness-transformer-cap50000-r3,5297562,fail,run directory missing: /rwthfs/rz/cluster/hpcwork/ro092286/MMCP_2026_Artifact_Hybrid_Inference/scratch/phydll_cap50000_reruns/phydll-24c1g-readiness-transformer-cap50000-r3_5297562,,,,,
-phydll-24p24c1g-default-transformer-cap50000-r1,5297564,fail,run directory missing: /rwthfs/rz/cluster/hpcwork/ro092286/MMCP_2026_Artifact_Hybrid_Inference/scratch/phydll_cap50000_reruns/phydll-24p24c1g-default-transformer-cap50000-r1_5297564,,,,,
-phydll-24p24c1g-default-transformer-cap50000-r2,5297569,fail,run directory missing: /rwthfs/rz/cluster/hpcwork/ro092286/MMCP_2026_Artifact_Hybrid_Inference/scratch/phydll_cap50000_reruns/phydll-24p24c1g-default-transformer-cap50000-r2_5297569,,,,,
-phydll-24p24c1g-default-transformer-cap50000-r3,5297576,fail,run directory missing: /rwthfs/rz/cluster/hpcwork/ro092286/MMCP_2026_Artifact_Hybrid_Inference/scratch/phydll_cap50000_reruns/phydll-24p24c1g-default-transformer-cap50000-r3_5297576,,,,,
-phydll-24p24c1g-readiness-transformer-cap50000-r1,5297578,fail,run directory missing: /rwthfs/rz/cluster/hpcwork/ro092286/MMCP_2026_Artifact_Hybrid_Inference/scratch/phydll_cap50000_reruns/phydll-24p24c1g-readiness-transformer-cap50000-r1_5297578,,,,,
-phydll-24p24c1g-readiness-transformer-cap50000-r2,5297580,fail,run directory missing: /rwthfs/rz/cluster/hpcwork/ro092286/MMCP_2026_Artifact_Hybrid_Inference/scratch/phydll_cap50000_reruns/phydll-24p24c1g-readiness-transformer-cap50000-r2_5297580,,,,,
-phydll-24p24c1g-readiness-transformer-cap50000-r3,5297582,fail,run directory missing: /rwthfs/rz/cluster/hpcwork/ro092286/MMCP_2026_Artifact_Hybrid_Inference/scratch/phydll_cap50000_reruns/phydll-24p24c1g-readiness-transformer-cap50000-r3_5297582,,,,,
-phydll-96c4g-default-transformer-cap50000-r1,5297584,fail,run directory missing: /rwthfs/rz/cluster/hpcwork/ro092286/MMCP_2026_Artifact_Hybrid_Inference/scratch/phydll_cap50000_reruns/phydll-96c4g-default-transformer-cap50000-r1_5297584,,,,,
-phydll-96c4g-default-transformer-cap50000-r2,5297585,fail,run directory missing: /rwthfs/rz/cluster/hpcwork/ro092286/MMCP_2026_Artifact_Hybrid_Inference/scratch/phydll_cap50000_reruns/phydll-96c4g-default-transformer-cap50000-r2_5297585,,,,,
-phydll-96c4g-default-transformer-cap50000-r3,5297586,fail,run directory missing: /rwthfs/rz/cluster/hpcwork/ro092286/MMCP_2026_Artifact_Hybrid_Inference/scratch/phydll_cap50000_reruns/phydll-96c4g-default-transformer-cap50000-r3_5297586,,,,,
-phydll-96c4g-readiness-transformer-cap50000-r1,5297587,fail,run directory missing: /rwthfs/rz/cluster/hpcwork/ro092286/MMCP_2026_Artifact_Hybrid_Inference/scratch/phydll_cap50000_reruns/phydll-96c4g-readiness-transformer-cap50000-r1_5297587,,,,,
-phydll-96c4g-readiness-transformer-cap50000-r2,5297588,fail,run directory missing: /rwthfs/rz/cluster/hpcwork/ro092286/MMCP_2026_Artifact_Hybrid_Inference/scratch/phydll_cap50000_reruns/phydll-96c4g-readiness-transformer-cap50000-r2_5297588,,,,,
-phydll-96c4g-readiness-transformer-cap50000-r3,5297589,fail,run directory missing: /rwthfs/rz/cluster/hpcwork/ro092286/MMCP_2026_Artifact_Hybrid_Inference/scratch/phydll_cap50000_reruns/phydll-96c4g-readiness-transformer-cap50000-r3_5297589,,,,,
-phydll-96p96c4g-default-transformer-cap50000-r1,5297590,fail,run directory missing: /rwthfs/rz/cluster/hpcwork/ro092286/MMCP_2026_Artifact_Hybrid_Inference/scratch/phydll_cap50000_reruns/phydll-96p96c4g-default-transformer-cap50000-r1_5297590,,,,,
-phydll-96p96c4g-default-transformer-cap50000-r2,5297592,fail,run directory missing: /rwthfs/rz/cluster/hpcwork/ro092286/MMCP_2026_Artifact_Hybrid_Inference/scratch/phydll_cap50000_reruns/phydll-96p96c4g-default-transformer-cap50000-r2_5297592,,,,,
-phydll-96p96c4g-default-transformer-cap50000-r3,5297594,fail,run directory missing: /rwthfs/rz/cluster/hpcwork/ro092286/MMCP_2026_Artifact_Hybrid_Inference/scratch/phydll_cap50000_reruns/phydll-96p96c4g-default-transformer-cap50000-r3_5297594,,,,,
-phydll-96p96c4g-readiness-transformer-cap50000-r1,5297596,fail,run directory missing: /rwthfs/rz/cluster/hpcwork/ro092286/MMCP_2026_Artifact_Hybrid_Inference/scratch/phydll_cap50000_reruns/phydll-96p96c4g-readiness-transformer-cap50000-r1_5297596,,,,,
-phydll-96p96c4g-readiness-transformer-cap50000-r2,5297598,fail,run directory missing: /rwthfs/rz/cluster/hpcwork/ro092286/MMCP_2026_Artifact_Hybrid_Inference/scratch/phydll_cap50000_reruns/phydll-96p96c4g-readiness-transformer-cap50000-r2_5297598,,,,,
-phydll-96p96c4g-readiness-transformer-cap50000-r3,5297601,fail,run directory missing: /rwthfs/rz/cluster/hpcwork/ro092286/MMCP_2026_Artifact_Hybrid_Inference/scratch/phydll_cap50000_reruns/phydll-96p96c4g-readiness-transformer-cap50000-r3_5297601,,,,,
+phydll-24c1g-default-transformer-cap50000-r1,5297557,ok,,7749.200000,133,1152,3456,24
+phydll-24c1g-default-transformer-cap50000-r2,5297558,ok,,7733.585000,121,1152,3456,24
+phydll-24c1g-default-transformer-cap50000-r3,5297559,ok,,7717.187500,86,1152,3456,24
+phydll-24c1g-readiness-transformer-cap50000-r1,5297560,ok,,7752.210000,87,1152,3456,24
+phydll-24c1g-readiness-transformer-cap50000-r2,5297561,ok,,7751.445000,87,1152,3456,24
+phydll-24c1g-readiness-transformer-cap50000-r3,5297562,ok,,7745.127500,86,1152,3456,24
+phydll-24p24c1g-default-transformer-cap50000-r1,5297564,ok,,7710.997500,92,576,1728,48
+phydll-24p24c1g-default-transformer-cap50000-r2,5297569,ok,,7725.640000,92,576,1728,48
+phydll-24p24c1g-default-transformer-cap50000-r3,5297576,ok,,7699.507500,92,576,1728,48
+phydll-24p24c1g-readiness-transformer-cap50000-r1,5297578,ok,,7715.220000,90,576,1728,48
+phydll-24p24c1g-readiness-transformer-cap50000-r2,5297580,ok,,7708.755000,94,576,1728,48
+phydll-24p24c1g-readiness-transformer-cap50000-r3,5297582,ok,,7668.917500,135,576,1728,48
+phydll-96c4g-default-transformer-cap50000-r1,5297584,ok,,2658.195000,169,336,1008,96
+phydll-96c4g-default-transformer-cap50000-r2,5297585,ok,,2415.977500,148,336,1008,96
+phydll-96c4g-default-transformer-cap50000-r3,5297586,ok,,2711.642500,158,336,1008,96
+phydll-96c4g-readiness-transformer-cap50000-r1,5297587,ok,,2340.582500,139,336,1008,96
+phydll-96c4g-readiness-transformer-cap50000-r2,5297588,ok,,2311.052500,143,336,1008,96
+phydll-96c4g-readiness-transformer-cap50000-r3,5297589,ok,,2310.827500,141,336,1008,96
+phydll-96p96c4g-default-transformer-cap50000-r1,5297590,ok,,3376.837500,197,180,540,192
+phydll-96p96c4g-default-transformer-cap50000-r2,5297592,ok,,5560.687500,233,180,540,192
+phydll-96p96c4g-default-transformer-cap50000-r3,5297594,ok,,2513.350000,145,180,540,192
+phydll-96p96c4g-readiness-transformer-cap50000-r1,5297596,ok,,2424.897500,164,180,540,192
+phydll-96p96c4g-readiness-transformer-cap50000-r2,5297598,ok,,2494.125000,147,180,540,192
+phydll-96p96c4g-readiness-transformer-cap50000-r3,5297601,ok,,2403.807500,140,180,540,192
